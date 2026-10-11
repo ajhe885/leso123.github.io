@@ -1,0 +1,1730 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>LESO LIFE</title>
+<meta name="description" content="生活费、饮食、睡眠和步数记录，每天五星结算。数据只存在你自己的浏览器里。">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="LESO LIFE">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="format-detection" content="telephone=no">
+<meta name="theme-color" content="#edf1ee" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1311" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<style>:root{padding-top:env(safe-area-inset-top)}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}</style>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Noto+Sans+SC:wght@400;500;700&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Noto+Sans+SC:wght@400;500;700&display=swap"></noscript>
+<style>
+/* Layout: one phone-width column, a dark "result screen" panel for the daily settlement, fixed bottom tab bar. */
+:root {
+  --bg: #edf1ee;
+  --surface: #ffffff;
+  --surface-2: #e2e8e4;
+  --fg: #15211c;
+  --muted: #536259;
+  --line: #d2dad5;
+  --accent: #1b7656;
+  --accent-ink: #ffffff;
+  --accent-soft: #d5ebe1;
+  --star: #b87600;
+  --hero-star: #f0b232;
+  --star-line: #92a39b;
+  --good: #1b7656;
+  --warn: #a8640a;
+  --bad: #bf3f2b;
+  --good-ink: #135a41;
+  --warn-ink: #7a4700;
+  --bad-ink: #9b2c1c;
+  --hero-bg: #15211c;
+  --hero-fg: #eef4f0;
+  --hero-muted: #a3b5ac;
+  --hero-star-line: #7f9189;
+  --font-display: "Bricolage Grotesque", "Noto Sans SC", -apple-system, "PingFang SC", sans-serif;
+  --font-body: "Noto Sans SC", -apple-system, "PingFang SC", "Apple SD Gothic Neo", sans-serif;
+  --radius: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1311; --surface: #151d1a; --surface-2: #1e2824; --fg: #e5eee9; --muted: #98a9a1;
+    --line: #29352f; --accent: #48c393; --accent-ink: #05130d; --accent-soft: #163a2c;
+    --star: #f3bd42; --hero-star: #f3bd42; --star-line: #7d8f87; --good: #48c393; --warn: #e6a23a; --bad: #ef7966;
+    --good-ink: #5fd3a5; --warn-ink: #f0b24f; --bad-ink: #f48b79;
+    --hero-bg: #1c2622; --hero-fg: #eef4f0; --hero-muted: #9aada4; --hero-star-line: #6d7f77;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1311; --surface: #151d1a; --surface-2: #1e2824; --fg: #e5eee9; --muted: #98a9a1;
+  --line: #29352f; --accent: #48c393; --accent-ink: #05130d; --accent-soft: #163a2c;
+  --star: #f3bd42; --hero-star: #f3bd42; --star-line: #7d8f87; --good: #48c393; --warn: #e6a23a; --bad: #ef7966;
+  --good-ink: #5fd3a5; --warn-ink: #f0b24f; --bad-ink: #f48b79;
+  --hero-bg: #1c2622; --hero-fg: #eef4f0; --hero-muted: #9aada4; --hero-star-line: #6d7f77;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); -webkit-text-size-adjust: 100%; scroll-padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.55;
+  padding-inline: 16px; padding-block: 0 calc(84px + env(safe-area-inset-bottom, 0px));
+}
+.wrap { max-width: 480px; margin: 0 auto; display: grid; gap: 14px; min-width: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.num { font-family: var(--font-display); font-variant-numeric: tabular-nums; }
+.money-text { white-space: nowrap; }
+
+/* Top bar */
+.topbar { display: flex; align-items: baseline; justify-content: space-between; padding-block: 14px 2px; gap: 12px; }
+.brand { font-family: var(--font-display); font-weight: 800; font-size: 20px; letter-spacing: 0.04em; }
+.brand small { font-size: 11px; font-weight: 500; color: var(--muted); letter-spacing: 0.08em; margin-left: 6px; }
+.topdate { color: var(--muted); font-size: 13px; }
+
+/* Banners */
+.banner { border-radius: var(--radius); padding: 12px 14px; display: grid; gap: 8px; font-size: 14px; background: var(--accent-soft); overflow-wrap: anywhere; }
+.banner.warn { background: color-mix(in srgb, var(--warn) 16%, var(--surface)); }
+.banner .row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Cards */
+.card { background: var(--surface); border-radius: var(--radius); padding: 16px; display: grid; gap: 12px; min-width: 0; }
+.card h2 { margin: 0; font-size: 15px; font-weight: 700; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 8px; }
+.card h2 .hint { font-size: 12px; font-weight: 400; color: var(--muted); }
+.label { font-size: 12px; color: var(--muted); letter-spacing: 0.04em; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.tiny { font-size: 12px; }
+.wrapany { overflow-wrap: anywhere; min-width: 0; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.stat { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; display: grid; gap: 2px; min-width: 0; }
+.stat .v { font-family: var(--font-display); font-weight: 700; font-size: clamp(15px, 4.6vw, 18px); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.divider { height: 1px; background: var(--line); }
+@media (max-width: 359px) {
+  .grid2.stack-narrow, .grid2.stats { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Home hero */
+.money { display: grid; gap: 4px; min-width: 0; }
+.money .big { font-family: var(--font-display); font-weight: 800; font-size: clamp(28px, 10vw, 46px); line-height: 1.05; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.today-row { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.today-row b { font-size: clamp(18px, 6vw, 22px); }
+.bar { height: 10px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--accent); border-radius: 99px; }
+.bar.over > i { background: var(--bad); }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 500; white-space: nowrap; }
+.chip.good { background: color-mix(in srgb, var(--good) 12%, transparent); color: var(--good-ink); }
+.chip.warn { background: color-mix(in srgb, var(--warn) 12%, transparent); color: var(--warn-ink); }
+.chip.bad { background: color-mix(in srgb, var(--bad) 12%, transparent); color: var(--bad-ink); }
+.chip.none { background: var(--surface-2); color: var(--muted); }
+.chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.text-bad { color: var(--bad-ink); }
+
+/* Stars: earned = filled, not earned = outline, not counted = dashed outline */
+.stars { display: flex; gap: 4px; }
+.star { width: 22px; height: 22px; fill: none; stroke: var(--star-line); stroke-width: 1.6; stroke-linejoin: round; flex: none; }
+.star.on { fill: var(--star); stroke: var(--star); }
+.star.skip { stroke-dasharray: 2.5 2.5; opacity: 0.8; }
+.dimrow { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; text-align: center; }
+.dimrow .d { display: grid; justify-items: center; gap: 2px; font-size: 12px; color: var(--muted); }
+
+/* Buttons */
+.btn { border: 0; border-radius: 12px; padding: 11px 14px; background: var(--surface-2); font-weight: 500; font-size: 15px; min-height: 44px; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); }
+.btn.danger { background: color-mix(in srgb, var(--bad) 10%, var(--surface)); color: var(--bad-ink); }
+.btn.ghost { background: transparent; border: 1px solid var(--line); }
+.btn.sm { min-height: 36px; padding: 6px 12px; font-size: 14px; border-radius: 10px; }
+.btn:disabled { opacity: 0.5; cursor: default; }
+.btnrow { display: flex; gap: 8px; flex-wrap: wrap; }
+.btnrow > .btn { flex: 1 1 auto; }
+.linkbtn { background: none; border: 0; padding: 8px 4px; margin: -8px -4px; min-height: 40px; color: var(--accent); font-weight: 500; font-size: 14px; }
+.linkbtn.danger { color: var(--bad-ink); }
+.linkbtn:disabled { color: var(--muted); }
+
+/* Forms */
+.field { display: grid; gap: 6px; min-width: 0; }
+.field > span { font-size: 13px; color: var(--muted); }
+.grid2 > .field, .grid3 > .field { align-content: end; }
+input[type="text"], input[type="number"], input[type="date"], select, textarea {
+  width: 100%; min-width: 0; font-size: 16px; padding: 10px 12px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--surface); min-height: 44px;
+}
+input[type="date"] { -webkit-appearance: none; appearance: none; padding-inline: 8px; }
+textarea { min-height: 120px; resize: vertical; line-height: 1.6; }
+textarea.code { font-family: ui-monospace, Menlo, monospace; font-size: 16px; line-height: 1.4; }
+.err { color: var(--bad-ink); font-size: 13px; }
+.note { color: var(--warn-ink); font-size: 13px; }
+.seg { display: flex; background: var(--surface-2); border-radius: 12px; padding: 3px; gap: 3px; }
+.seg button { flex: 1; border: 0; background: transparent; border-radius: 9px; padding: 8px 2px; font-size: 14px; min-height: 40px; min-width: 0; }
+.seg button.on { background: var(--surface); font-weight: 700; box-shadow: 0 1px 2px rgb(0 0 0 / 0.12); }
+.check { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+.check input { width: 22px; height: 22px; accent-color: var(--accent); flex: none; }
+.check.disabled { color: var(--muted); }
+.cats { display: flex; flex-wrap: wrap; gap: 6px; }
+.cats button { border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 6px 12px; font-size: 14px; min-height: 40px; }
+.cats button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.meal { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: center; }
+.meal label { display: flex; align-items: center; gap: 8px; min-width: 72px; min-height: 44px; font-size: 14px; }
+.meal input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--accent); }
+.filebtn { position: relative; display: grid; place-items: center; }
+.vh { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+.vh:focus-visible + .filebtn, .filebtn:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+details > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; gap: 6px; list-style: none; }
+details > summary::-webkit-details-marker { display: none; }
+details > summary::before { content: ""; width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); flex: none; margin-right: 2px; }
+details[open] > summary::before { transform: rotate(45deg); }
+
+/* Lists */
+.list { display: grid; }
+.item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; padding-block: 10px; border-top: 1px solid var(--line); align-items: center; }
+.item:first-child { border-top: 0; }
+.item .t { min-width: 0; overflow-wrap: anywhere; }
+.item .amt { font-family: var(--font-display); font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.item .acts { grid-column: 1 / -1; display: flex; gap: 22px; padding-top: 2px; }
+.empty { color: var(--muted); font-size: 14px; padding-block: 6px; }
+
+/* Date nav */
+.datenav { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; gap: 8px; }
+.datenav .mid { text-align: center; display: grid; gap: 0; justify-items: center; }
+.datenav .mid b { font-size: 16px; }
+.datenav .mid .linkbtn { font-size: 13px; min-height: 40px; margin: -8px 0; padding: 8px 8px; }
+.iconbtn { width: 44px; height: 44px; border-radius: 12px; border: 0; background: var(--surface); display: grid; place-items: center; }
+.iconbtn:disabled { opacity: 0.35; cursor: default; }
+.iconbtn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Settlement hero */
+.result { background: var(--hero-bg); color: var(--hero-fg); border-radius: 18px; padding: 20px 18px; display: grid; gap: 14px; min-width: 0; }
+.result .eyebrow { font-family: var(--font-display); font-weight: 700; letter-spacing: 0.14em; font-size: 12px; color: var(--hero-muted); text-transform: uppercase; }
+.result .rstars { display: flex; gap: 6px; }
+.result .rstars .star { width: 40px; height: 40px; stroke: var(--hero-star-line); stroke-width: 1.3; }
+.result .rstars .star.on { fill: var(--hero-star); stroke: var(--hero-star); }
+.result .score { font-family: var(--font-display); font-weight: 800; font-size: 30px; line-height: 1; }
+.result .score small { font-size: 15px; font-weight: 500; color: var(--hero-muted); margin-left: 6px; }
+.result .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 8px; border-top: 1px solid color-mix(in srgb, var(--hero-fg) 14%, transparent); padding-top: 12px; }
+.result .cols .label { color: var(--hero-muted); }
+.result .cols .v { font-family: var(--font-display); font-weight: 700; font-size: 16px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dim { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 2px 10px; padding-block: 12px; border-top: 1px solid var(--line); }
+.dim:first-of-type { border-top: 0; }
+.dim .star { grid-row: span 3; width: 26px; height: 26px; }
+.dim .nm { display: flex; justify-content: space-between; gap: 8px; font-weight: 700; flex-wrap: wrap; }
+.dim .small, .dim .rule, .dim .tip { overflow-wrap: anywhere; min-width: 0; }
+.dim .rule { font-size: 12px; color: var(--muted); }
+.dim .tip { font-size: 13px; color: var(--warn-ink); grid-column: 2; }
+.summary p { margin: 0 0 8px; overflow-wrap: anywhere; }
+.summary p:last-child { margin: 0; }
+.diarybox { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; background: var(--surface-2); border-radius: 10px; padding: 12px; }
+
+/* Charts */
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart .gridline { stroke: var(--line); stroke-width: 1; }
+.chart .ref { stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 4 4; }
+.chart .barm { fill: var(--accent); }
+.chart .barm.over { fill: var(--bad); }
+.chart .barm.sel { opacity: 0.55; }
+.chart text { fill: var(--muted); font-size: 11px; font-family: var(--font-body); }
+.chart .hit { fill: transparent; cursor: pointer; }
+.chart .hit:focus-visible { outline: none; fill: color-mix(in srgb, var(--accent) 14%, transparent); stroke: var(--accent); stroke-width: 2; }
+.readout { font-size: 13px; min-height: 20px; color: var(--fg); }
+.hbars { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px 10px; align-items: center; font-size: 13px; }
+.hbars .track { height: 10px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+.hbars .track i { display: block; height: 100%; background: var(--accent); border-radius: 0 4px 4px 0; }
+.hbars .v { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.legend { display: flex; gap: 6px 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; background: var(--accent); margin-right: 5px; vertical-align: -1px; }
+.legend i.over { background: var(--bad); }
+.legend i.ref { background: none; border-top: 2px dashed var(--muted); height: 0; width: 14px; vertical-align: 3px; border-radius: 0; }
+
+/* History rows */
+.hrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; padding-block: 10px; border-top: 1px solid var(--line); }
+.hrow:first-child { border-top: 0; }
+.hrow .stars .star { width: 15px; height: 15px; }
+.hrow .acts { grid-column: 1 / -1; display: flex; gap: 22px; padding-top: 2px; }
+
+/* Tab bar */
+.tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--surface); border-top: 1px solid var(--line); padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px)); }
+.tabbar .in { max-width: 480px; margin: 0 auto; display: grid; grid-template-columns: repeat(5, 1fr); }
+.tabbar button { border: 0; background: none; display: grid; justify-items: center; gap: 2px; padding: 6px 0; font-size: 11px; color: var(--muted); min-height: 52px; }
+.tabbar button svg { width: 23px; height: 23px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.tabbar button.on { color: var(--accent); font-weight: 700; }
+
+/* Sheet + toast */
+.scrim { position: fixed; inset: 0; background: rgb(0 0 0 / 0.45); z-index: 30; display: grid; align-items: end; justify-items: center; }
+.sheet { background: var(--surface); width: 100%; max-width: 480px; border-radius: 18px 18px 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 12px; max-height: 88vh; overflow-y: auto; }
+.sheet h3 { margin: 0; font-size: 17px; }
+.toast { pointer-events: none; position: fixed; left: 16px; right: 16px; margin: 0 auto; width: fit-content; max-width: 448px; bottom: calc(80px + env(safe-area-inset-bottom, 0px)); z-index: 40; background: var(--fg); color: var(--bg); border-radius: 16px; padding: 8px 16px; font-size: 14px; display: flex; gap: 12px; align-items: center; }
+.toast span { overflow-wrap: anywhere; min-width: 0; }
+.toast.top { bottom: auto; top: calc(12px + env(safe-area-inset-top, 0px)); }
+.toast button { pointer-events: auto; flex: none; white-space: nowrap; min-height: 36px; padding: 0 8px; background: none; border: 0; color: var(--bg); font-weight: 700; text-decoration: underline; }
+.savedot { font-size: 12px; color: var(--muted); font-weight: 400; }
+.anchor { scroll-margin-top: 12px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .result .rstars .star.on { animation: pop 0.45s ease-out both; }
+  .result .rstars .star.on:nth-child(2) { animation-delay: 0.08s; }
+  .result .rstars .star.on:nth-child(3) { animation-delay: 0.16s; }
+  .result .rstars .star.on:nth-child(4) { animation-delay: 0.24s; }
+  .result .rstars .star.on:nth-child(5) { animation-delay: 0.32s; }
+  @keyframes pop { from { transform: scale(0.6); } 60% { transform: scale(1.12); } to { transform: scale(1); } }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="topbar">
+    <div class="brand">LESO LIFE<small>V0.1</small></div>
+    <div class="topdate" id="topdate"></div>
+  </header>
+  <div id="banners" class="wrap"></div>
+  <main id="view" class="wrap"></main>
+</div>
+
+<nav class="tabbar" aria-label="主导航">
+  <div class="in">
+    <button type="button" data-act="tab" data-tab="home" id="tab-home"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/></svg>首页</button>
+    <button type="button" data-act="tab" data-tab="record" id="tab-record"><svg viewBox="0 0 24 24"><path d="M5 4h10l4 4v12H5z"/><path d="M9 12h6M9 16h4"/></svg>记录</button>
+    <button type="button" data-act="tab" data-tab="settle" id="tab-settle"><svg viewBox="0 0 24 24"><path d="M12 3.5l2.5 5.2 5.7.7-4.2 4 1.1 5.6L12 16.3 6.9 19l1.1-5.6-4.2-4 5.7-.7z"/></svg>结算</button>
+    <button type="button" data-act="tab" data-tab="history" id="tab-history"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>历史</button>
+    <button type="button" data-act="tab" data-tab="settings" id="tab-settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c1.2-3.8 4-5.5 7.5-5.5s6.3 1.7 7.5 5.5"/></svg>设置</button>
+  </div>
+</nav>
+
+<div id="sheetroot"></div>
+<div id="toastroot"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------- constants ----------
+  var STORE_KEY = 'leso-life:data';
+  var DRAFT_KEY = 'leso-life:draft';
+  var APP_ID = 'leso-life';
+  var DATA_VERSION = 1;
+  var CATS = [
+    { id: 'meal', name: '外食餐饮', food: true },
+    { id: 'grocery', name: '买菜食材', food: true },
+    { id: 'snack', name: '咖啡零食', food: true },
+    { id: 'transport', name: '交通', food: false },
+    { id: 'daily', name: '日用品', food: false },
+    { id: 'study', name: '学习', food: false },
+    { id: 'social', name: '娱乐社交', food: false },
+    { id: 'other', name: '其他', food: false }
+  ];
+  var CAT = {};
+  CATS.forEach(function (c) { CAT[c.id] = c; });
+  function isCat(id) { return typeof id === 'string' && Object.prototype.hasOwnProperty.call(CAT, id); }
+  var MEALS = [{ id: 'b', name: '早餐' }, { id: 'l', name: '午餐' }, { id: 'd', name: '晚餐' }];
+  var CHECKS = [
+    { id: 'veg', name: '吃了蔬菜或水果' },
+    { id: 'noSugar', name: '没喝含糖饮料' },
+    { id: 'noLate', name: '没吃夜宵或油炸食品' }
+  ];
+  var BODY = ['很差', '较差', '一般', '不错', '很好'];
+  var DIMS = [
+    { key: 'budget', name: '预算' },
+    { key: 'food', name: '饮食' },
+    { key: 'sleep', name: '睡眠' },
+    { key: 'move', name: '运动' },
+    { key: 'body', name: '身体' }
+  ];
+  var SPREADS = [1, 2, 3, 5, 7, 14, 30];
+  // Allowed range for every adjustable rule; used by the inputs and when importing a backup.
+  var RULE_SPEC = {
+    'budget.paceDays': { min: 1, max: 30, step: 1, int: true },
+    'food.minMeals': { min: 1, max: 3, step: 1, int: true },
+    'food.healthRequired': { min: 0, max: 3, step: 1, int: true },
+    'sleep.minHours': { min: 0, max: 24, step: 0.5 },
+    'sleep.maxHours': { min: 0, max: 24, step: 0.5 },
+    'move.minSteps': { min: 0, max: 100000, step: 500, int: true },
+    'move.altMinutes': { min: 0, max: 600, step: 5, int: true },
+    'body.minScore': { min: 1, max: 5, step: 1, int: true }
+  };
+  var WEEK = ['日', '一', '二', '三', '四', '五', '六'];
+  var STAR_PATH = 'M12 2.6l2.85 5.95 6.55.82-4.8 4.55 1.22 6.48L12 17.25l-5.82 3.15 1.22-6.48-4.8-4.55 6.55-.82z';
+
+  // ---------- small utils ----------
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function keyOf(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function parts(k) { var p = String(k).split('-'); return [+p[0], +p[1], +p[2]]; }
+  function utc(k) { var p = parts(k); return Date.UTC(p[0], p[1] - 1, p[2]); }
+  function fromUtc(t) { var d = new Date(t); return d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate()); }
+  function diffDays(a, b) { return Math.round((utc(a) - utc(b)) / 86400000); }
+  function addDays(k, n) { return fromUtc(utc(k) + n * 86400000); }
+  function isKey(k) {
+    if (typeof k !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(k)) return false;
+    var y = +k.slice(0, 4);
+    return y >= 2000 && y <= 2100 && fromUtc(utc(k)) === k;
+  }
+  function weekday(k) { return new Date(utc(k)).getUTCDay(); }
+  function fmtDate(k) {
+    var p = parts(k), y = new Date().getFullYear();
+    return (p[0] !== y ? p[0] + '年' : '') + p[1] + '月' + p[2] + '日 周' + WEEK[weekday(k)];
+  }
+  function fmtShort(k) { var p = parts(k); return p[1] + '/' + p[2]; }
+  function fmtW(n) {
+    if (n == null || !isFinite(n)) return '—';
+    var r = Math.round(n);
+    return (r < 0 ? '−₩' : '₩') + Math.abs(r).toLocaleString('ko-KR');
+  }
+  function fmtN(n, d) { n = Number(n); if (n == null || !isFinite(n)) return '—'; return Number(n.toFixed(d || 0)).toLocaleString('ko-KR'); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function num(v) { if (v === '' || v == null || typeof v === 'boolean') return null; var n = Number(v); return isFinite(n) ? n : null; }
+  function uid() { uid.n = (uid.n || 0) + 1; return 'e' + Date.now().toString(36) + uid.n.toString(36); }
+  function starSvg(cls) { return '<svg class="star ' + (cls || '') + '" viewBox="0 0 24 24" aria-hidden="true"><path d="' + STAR_PATH + '"/></svg>'; }
+  function lsGet(k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { window.localStorage.setItem(k, v); return true; } catch (e) { return false; } }
+  function lsDel(k) { try { window.localStorage.removeItem(k); } catch (e) {} }
+
+  // ---------- state ----------
+  function defaultRules() {
+    return {
+      budget: { mode: 'pace', paceDays: 7 },
+      food: { minMeals: 2, healthRequired: 2, useFoodBudget: false },
+      sleep: { minHours: 7, maxHours: 10 },
+      move: { minSteps: 8000, altMinutes: 30 },
+      body: { minScore: 3 }
+    };
+  }
+  function clampRule(path, v) {
+    var sp = RULE_SPEC[path], n = num(v);
+    if (!sp || n == null) return null;
+    n = Math.min(sp.max, Math.max(sp.min, n));
+    return sp.int ? Math.round(n) : Math.round(n * 2) / 2;
+  }
+  function calendarToday(hour) { return keyOf(new Date(Date.now() - (hour == null ? 4 : hour) * 3600000)); }
+  function defaultSettings(today) {
+    return {
+      balance: null, startDate: today, endDate: addDays(today, 89),
+      fixedCosts: [], reserve: 0, foodDaily: null, goalText: '', dayStartHour: 4,
+      rules: defaultRules()
+    };
+  }
+  function freshState(today) {
+    today = today || calendarToday(4);
+    return { app: APP_ID, version: DATA_VERSION, settings: defaultSettings(today), days: {}, meta: { createdAt: new Date().toISOString(), lastExport: null } };
+  }
+  function emptyDay() {
+    return {
+      diary: '', expenses: [],
+      meals: { b: { ate: false, text: '', auto: false }, l: { ate: false, text: '', auto: false }, d: { ate: false, text: '', auto: false } },
+      checks: { veg: false, noSugar: false, noLate: false },
+      sleep: null, steps: null, exMin: null, body: null, bodyNote: '', bodySkip: false
+    };
+  }
+  function safeId(id, seen) {
+    var v = (typeof id === 'string' || typeof id === 'number') ? String(id) : '';
+    if (!/^[\w-]{1,40}$/.test(v) || seen[v]) v = uid();
+    seen[v] = true;
+    return v;
+  }
+  function str(v, max) { return typeof v === 'string' ? v.slice(0, max || 5000) : (typeof v === 'number' ? String(v) : ''); }
+  // Rebuild a state from anything (a backup file, older data) so only well-formed values get through.
+  function normalize(s) {
+    var base = freshState();
+    if (!s || typeof s !== 'object' || Array.isArray(s)) return base;
+    var st = (s.settings && typeof s.settings === 'object') ? s.settings : {};
+    var ds = base.settings, seen = {};
+    var out = { app: APP_ID, version: DATA_VERSION, settings: null, days: {}, meta: base.meta };
+    var meta = (s.meta && typeof s.meta === 'object') ? s.meta : {};
+    if (typeof meta.createdAt === 'string' && !isNaN(Date.parse(meta.createdAt))) out.meta.createdAt = meta.createdAt;
+    if (typeof meta.lastExport === 'string' && !isNaN(Date.parse(meta.lastExport)) && Date.parse(meta.lastExport) <= Date.now() + 86400000) out.meta.lastExport = meta.lastExport;
+    var bal = num(st.balance);
+    var startDate = isKey(st.startDate) ? st.startDate : ds.startDate;
+    var endDate = isKey(st.endDate) && st.endDate >= startDate ? st.endDate : addDays(startDate, 89);
+    var hour = num(st.dayStartHour);
+    out.settings = {
+      balance: bal != null && bal >= 0 ? Math.round(bal) : null,
+      startDate: startDate, endDate: endDate,
+      fixedCosts: (Array.isArray(st.fixedCosts) ? st.fixedCosts : []).filter(function (f) { return f && typeof f === 'object' && num(f.amount) > 0; }).map(function (f) {
+        return { id: safeId(f.id, seen), name: str(f.name, 80) || '固定支出', amount: Math.round(num(f.amount)) };
+      }),
+      reserve: Math.max(0, Math.round(num(st.reserve) || 0)),
+      foodDaily: num(st.foodDaily) > 0 ? Math.round(num(st.foodDaily)) : null,
+      goalText: str(st.goalText, 500),
+      dayStartHour: hour == null ? 4 : Math.min(6, Math.max(0, Math.round(hour))),
+      rules: defaultRules()
+    };
+    var r = (st.rules && typeof st.rules === 'object') ? st.rules : {};
+    Object.keys(RULE_SPEC).forEach(function (path) {
+      var p = path.split('.'), g = r[p[0]];
+      if (g && typeof g === 'object') { var v = clampRule(path, g[p[1]]); if (v != null) out.settings.rules[p[0]][p[1]] = v; }
+    });
+    if (r.budget && (r.budget.mode === 'pace' || r.budget.mode === 'daily')) out.settings.rules.budget.mode = r.budget.mode;
+    if (r.food && typeof r.food.useFoodBudget === 'boolean') out.settings.rules.food.useFoodBudget = r.food.useFoodBudget;
+
+    var days = (s.days && typeof s.days === 'object' && !Array.isArray(s.days)) ? s.days : {};
+    Object.keys(days).forEach(function (k) {
+      if (!isKey(k)) return;
+      var d = (days[k] && typeof days[k] === 'object') ? days[k] : {}, e = emptyDay();
+      e.diary = str(d.diary, 20000);
+      e.expenses = (Array.isArray(d.expenses) ? d.expenses : []).filter(function (x) { return x && typeof x === 'object' && num(x.amount) > 0; }).map(function (x) {
+        return { id: safeId(x.id, seen), amount: Math.round(num(x.amount)), cat: isCat(x.cat) ? x.cat : 'other', note: str(x.note, 200), spread: Math.max(1, Math.min(31, Math.round(num(x.spread) || 1))) };
+      });
+      var meals = (d.meals && typeof d.meals === 'object') ? d.meals : {};
+      MEALS.forEach(function (m) { var src = (meals[m.id] && typeof meals[m.id] === 'object') ? meals[m.id] : {}; e.meals[m.id] = { ate: src.ate === true, text: str(src.text, 200), auto: src.auto === true }; });
+      var checks = (d.checks && typeof d.checks === 'object') ? d.checks : {};
+      CHECKS.forEach(function (c) { e.checks[c.id] = checks[c.id] === true; });
+      var sl = num(d.sleep), stp = num(d.steps), ex = num(d.exMin), bd = num(d.body);
+      e.sleep = sl != null ? Math.min(24, Math.max(0, sl)) : null;
+      e.steps = stp != null ? Math.max(0, Math.round(stp)) : null;
+      e.exMin = ex != null ? Math.max(0, Math.round(ex)) : null;
+      e.body = bd != null ? Math.max(1, Math.min(5, Math.round(bd))) : null;
+      e.bodyNote = str(d.bodyNote, 200); e.bodySkip = d.bodySkip === true;
+      if (dayHasContent(e)) out.days[k] = e;
+    });
+    return out;
+  }
+
+  var storageOK = true;
+  var corruptRaw = null;
+  function probeStore() {
+    try {
+      var k = STORE_KEY + ':probe';
+      window.localStorage.setItem(k, '1');
+      var ok = window.localStorage.getItem(k) === '1';
+      window.localStorage.removeItem(k);
+      return ok;
+    } catch (e) { return false; }
+  }
+  function writeStore() {
+    if (demoMode) return;
+    storageOK = lsSet(STORE_KEY, JSON.stringify(state));
+  }
+  var saveTimer = null;
+  function saveSoon() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function () { saveTimer = null; writeStore(); markSaved(); }, 250);
+  }
+  function saveNow() { clearTimeout(saveTimer); saveTimer = null; writeStore(); markSaved(); }
+  function flush() { if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; writeStore(); } saveDraft(); }
+  window.addEventListener('pagehide', flush);
+  document.addEventListener('visibilitychange', function () { if (document.hidden) flush(); else checkRollover(); });
+  window.addEventListener('focus', checkRollover);
+
+  var state, demoMode = false;
+  var ui = { tab: 'home', recDate: null, setDate: null, histRange: 7, chartSel: null };
+  function blankDraft(date) { return { amount: '', cat: 'meal', note: '', spread: 1, date: date || null }; }
+  var draft = blankDraft();
+  function resetDraft() { draft = blankDraft(); saveDraft(); }
+  function draftPending() { return num(draft.amount) > 0 || !!String(draft.note || '').trim(); }
+  function saveDraft() { if (!demoMode) { if (draftPending()) lsSet(DRAFT_KEY, JSON.stringify(draft)); else lsDel(DRAFT_KEY); } }
+  function loadDraft() {
+    try {
+      var d = JSON.parse(lsGet(DRAFT_KEY) || 'null');
+      if (d && typeof d === 'object') draft = { amount: str(d.amount, 12).replace(/[^\d.]/g, ''), cat: isCat(d.cat) ? d.cat : 'meal', note: str(d.note, 200), spread: SPREADS.indexOf(+d.spread) >= 0 ? +d.spread : 1, date: isKey(d.date) ? d.date : null };
+    } catch (e) {}
+  }
+
+  function todayKey() { return calendarToday(state && state.settings ? state.settings.dayStartHour : 4); }
+  function getDay(k) { return state.days[k] || null; }
+  function ensureDay(k) { if (!state.days[k]) state.days[k] = emptyDay(); return state.days[k]; }
+  function dayHasContent(d) {
+    if (!d) return false;
+    return !!(String(d.diary || '').trim() || d.expenses.length || d.sleep != null || d.steps != null || d.exMin != null ||
+      d.body != null || d.bodySkip || String(d.bodyNote || '').trim() ||
+      MEALS.some(function (m) { return d.meals[m.id].ate || String(d.meals[m.id].text || '').trim(); }) ||
+      CHECKS.some(function (c) { return d.checks[c.id]; }));
+  }
+  function hasRecord(k) { return dayHasContent(state.days[k]); }
+  function pruneDay(k) { if (state.days[k] && !dayHasContent(state.days[k])) delete state.days[k]; }
+  function isSetUp() { return state.settings.balance != null; }
+  function mealEaten(m) { return !!m.ate; }
+
+  // ---------- demo data (never saved) ----------
+  function makeDemo() {
+    var t = calendarToday(4);
+    var s = freshState(t);
+    var start = addDays(t, -9);
+    s.settings.balance = 3000000; s.settings.startDate = start; s.settings.endDate = addDays(start, 89);
+    s.settings.fixedCosts = [{ id: 'f1', name: '房租（3 个月）', amount: 1200000 }, { id: 'f2', name: '手机费（3 个月）', amount: 99000 }];
+    s.settings.reserve = 100000; s.settings.foodDaily = 12000;
+    s.settings.goalText = '规律睡觉，少点外卖，撑到学期结束还剩 10 万。';
+    var plan = [
+      { ex: [[6500, 'meal', '学校食堂午饭'], [4800, 'snack', '便利店咖啡']], sl: 6.5, st: 7200, bd: 3, m: [1, 1, 1], c: [1, 0, 1], diary: '开学第一周，上午上课，下午在图书馆。晚上自己煮了拉面加蛋。' },
+      { ex: [[42000, 'grocery', '超市买一周的菜', 7], [1450, 'transport', '地铁']], sl: 7.5, st: 9100, bd: 4, m: [1, 1, 1], c: [1, 1, 1], diary: '去超市买了一周的菜，鸡蛋、鸡胸肉、米、青菜。做了炒饭。' },
+      { ex: [[8000, 'meal', '午饭拌饭'], [1450, 'transport', '地铁']], sl: 7, st: 10400, bd: 4, m: [0, 1, 1], c: [1, 1, 1], diary: '' },
+      { ex: [[25000, 'social', '和同学吃烤肉 AA'], [3200, 'snack', '奶茶']], sl: 5.5, st: 6100, bd: 2, m: [1, 1, 1], c: [0, 0, 0], diary: '晚上和同学吃烤肉，回来很晚，有点累。' },
+      { ex: [[5500, 'meal', '紫菜包饭']], sl: 8, st: 4300, bd: 3, m: [1, 1, 1], c: [1, 1, 1], ex2: 30, diary: '在宿舍做作业，傍晚跑步 30 分钟。' },
+      { ex: [[12900, 'daily', '洗衣液和纸巾'], [7000, 'meal', '午饭']], sl: 7, st: 8800, bd: 4, m: [1, 1, 1], c: [1, 1, 0], diary: '' },
+      { ex: [[1450, 'transport', '地铁'], [4500, 'snack', '咖啡']], sl: 6, st: 11200, bd: 3, m: [0, 1, 1], c: [1, 1, 1], diary: '去市中心逛了一下，没买东西。' },
+      { ex: [[19800, 'study', '教材'], [6000, 'meal', '午饭']], sl: 7.5, st: 8300, bd: 4, m: [1, 1, 1], c: [1, 1, 1], diary: '' },
+      { ex: [[9000, 'meal', '炸鸡外卖（分一半）'], [2000, 'snack', '饮料']], sl: 6.5, st: 5600, bd: 3, m: [1, 1, 1], c: [0, 0, 0], diary: '赶报告，晚上点了外卖。' },
+      { ex: [[6500, 'meal', '学校食堂'], [1450, 'transport', '地铁']], sl: 7, st: 8600, bd: 4, m: [1, 1, 1], c: [1, 1, 1], diary: '今天正常上课，晚上自己做了鸡胸肉沙拉。' }
+    ];
+    plan.forEach(function (p, i) {
+      var k = addDays(start, i), d = emptyDay();
+      d.diary = p.diary;
+      d.expenses = p.ex.map(function (x, j) { return { id: 'd' + i + '_' + j, amount: x[0], cat: x[1], note: x[2], spread: x[3] || 1 }; });
+      d.sleep = p.sl; d.steps = p.st; d.body = p.bd; d.exMin = p.ex2 || null;
+      MEALS.forEach(function (m, j) { d.meals[m.id].ate = !!p.m[j]; });
+      d.meals.l.text = p.ex[0][1] === 'meal' ? p.ex[0][2] : '';
+      CHECKS.forEach(function (c, j) { d.checks[c.id] = !!p.c[j]; });
+      s.days[k] = d;
+    });
+    return s;
+  }
+
+  // ---------- money ----------
+  function fixedTotal() { return state.settings.fixedCosts.reduce(function (a, f) { return a + (f.amount || 0); }, 0); }
+  function disposable() { var s = state.settings; return (s.balance || 0) - fixedTotal() - (s.reserve || 0); }
+  function periodDays() { var s = state.settings; return Math.max(1, diffDays(s.endDate, s.startDate) + 1); }
+  function dayActual(k) { var d = state.days[k]; if (!d) return 0; return d.expenses.reduce(function (a, e) { return a + e.amount; }, 0); }
+
+  // Spread purchases (e.g. a week of groceries) across several days for daily figures.
+  // total = what the budget is charged that day. Shares of an in-period purchase that would fall after
+  // the end date are charged on the purchase day (tail), so the whole amount stays inside the period,
+  // while food and category figures keep the spread the user chose.
+  // A purchase made before the start date is part of the opening balance: its in-period share is dropped.
+  function slot(map, k) { return map[k] || (map[k] = { total: 0, food: 0, cats: {}, tail: 0 }); }
+  function buildAlloc() {
+    var map = {}, s = state.settings;
+    Object.keys(state.days).forEach(function (k) {
+      var inPeriod = k >= s.startDate && k <= s.endDate;
+      state.days[k].expenses.forEach(function (e) {
+        var n = Math.max(1, e.spread || 1), per = e.amount / n;
+        for (var i = 0; i < n; i++) {
+          var kk = addDays(k, i);
+          if (k < s.startDate && kk >= s.startDate) break;
+          if (inPeriod && kk > s.endDate) { var t = slot(map, k); t.total += per; t.tail += per; continue; }
+          var m = slot(map, kk);
+          m.total += per;
+          if (CAT[e.cat].food) m.food += per;
+          m.cats[e.cat] = (m.cats[e.cat] || 0) + per;
+        }
+      });
+    });
+    return map;
+  }
+  // Days of this purchase's spread that fall after the period end (0 when none).
+  function tailDays(k, e) {
+    var s = state.settings;
+    if (k < s.startDate || k > s.endDate) return 0;
+    return Math.max(0, (e.spread || 1) - (diffDays(s.endDate, k) + 1));
+  }
+  function actualBetween(fromK, toK) {
+    var sum = 0;
+    Object.keys(state.days).forEach(function (k) { if (k >= fromK && k <= toK) sum += dayActual(k); });
+    return sum;
+  }
+  function allocBetween(alloc, fromK, toK) {
+    var sum = 0;
+    Object.keys(alloc).forEach(function (k) { if (k >= fromK && k <= toK) sum += alloc[k].total; });
+    return sum;
+  }
+
+  function finance(X, alloc) {
+    var s = state.settings, r = s.rules.budget;
+    alloc = alloc || buildAlloc();
+    var F = { X: X, start: s.startDate, end: s.endDate };
+    F.before = X < s.startDate; F.after = X > s.endDate; F.inPeriod = !F.before && !F.after;
+    F.fixed = fixedTotal(); F.disp = disposable(); F.totalDays = periodDays(); F.base = Math.max(0, F.disp / F.totalDays);
+    F.dayNo = diffDays(X, s.startDate) + 1;
+    var lastK = F.after ? s.endDate : X;
+    // Cash actually paid out since the start date (what a bank app would show, minus the reserved amounts).
+    F.remAfter = F.disp - (F.before ? 0 : actualBetween(s.startDate, lastK));
+    // Budget pool on an allocation basis, so a spread purchase is counted once per day, never twice.
+    F.poolBefore = F.disp - (F.before ? 0 : allocBetween(alloc, s.startDate, addDays(lastK, -1)));
+    F.poolAfter = F.disp - (F.before ? 0 : allocBetween(alloc, s.startDate, lastK));
+    F.daysLeftIncl = Math.max(1, diffDays(s.endDate, X) + 1);
+    F.daysLeftAfter = Math.max(0, diffDays(s.endDate, X));
+    F.exhausted = F.inPeriod && F.poolBefore <= 0.5;
+    F.allowance = F.before ? F.base : (F.after ? 0 : Math.max(0, F.poolBefore / F.daysLeftIncl));
+    var a = alloc[X] || { total: 0, food: 0, cats: {} };
+    F.daySpent = a.total; F.dayFood = a.food; F.dayActual = dayActual(X);
+    if (F.before) F.tomorrow = F.base;
+    else if (F.after || F.daysLeftAfter === 0) F.tomorrow = null;
+    else F.tomorrow = Math.max(0, F.poolAfter / F.daysLeftAfter);
+    // pace: average of the last N days inside the period, ending at X
+    var N = Math.max(1, Math.round(r.paceDays || 7));
+    var from = addDays(lastK, -(N - 1)); if (from < s.startDate) from = s.startDate;
+    var count = Math.max(1, diffDays(lastK, from) + 1), sum = 0;
+    for (var i = 0; i < count; i++) { var m = alloc[addDays(from, i)]; if (m) sum += m.total; }
+    F.paceCount = count; F.avg = F.before ? 0 : sum / count;
+    F.lasts = F.avg > 0 ? Math.max(0, F.poolAfter) / F.avg : Infinity;
+    F.onTrack = F.poolAfter >= -0.5 && F.avg * F.daysLeftAfter <= F.poolAfter + 0.5;
+    F.shortDays = F.onTrack ? 0 : Math.max(0, Math.ceil(F.daysLeftAfter - F.lasts));
+    F.overBy = Math.max(0, -F.poolAfter);
+    return F;
+  }
+
+  // ---------- star rules ----------
+  function evaluate(X, alloc) {
+    var s = state.settings, R = s.rules, d = getDay(X), F = finance(X, alloc);
+    var out = { X: X, F: F, d: d, dims: {}, stars: 0, counted: 0, recorded: hasRecord(X) };
+    function put(key, status, actual, rule, tip) { out.dims[key] = { status: status, actual: actual, rule: rule, tip: tip || '' }; }
+
+    // budget
+    var bRule = R.budget.mode === 'daily'
+      ? '当天花费（分摊后）不超过当天额度'
+      : '按近 ' + R.budget.paceDays + ' 天的平均花费，剩下的预算能撑到目标日（' + fmtDate(s.endDate) + '）';
+    if (!isSetUp()) put('budget', 'skip', '还没设置资金，这一项不计分', bRule);
+    else if (!F.inPeriod) put('budget', 'skip', '不在预算周期内，这一项不计分', bRule);
+    else if (!out.recorded) put('budget', 'none', '未记录', bRule);
+    else {
+      var noneLeft = F.daysLeftAfter > 0 && F.poolAfter <= 0.5;
+      var pass = R.budget.mode === 'daily' ? (!F.exhausted && F.daySpent <= F.allowance + 0.5) : (F.onTrack && !noneLeft);
+      var act = '当天 ' + fmtW(F.daySpent) + ' / 额度 ' + fmtW(F.allowance);
+      if (R.budget.mode !== 'daily') act += '；近 ' + F.paceCount + ' 天平均 ' + fmtW(F.avg) + '/天';
+      var tip = '';
+      if (!pass) {
+        if (F.poolAfter <= 0.5) tip = '预算已经用完' + (F.overBy >= 1 ? '，超出 ' + fmtW(F.overBy) : '') + '。需要补充资金，或者减少固定支出、期末保留金额。';
+        else if (F.tomorrow != null) tip = '之后每天控制在 ' + fmtW(F.tomorrow) + ' 以内，就能回到目标线。';
+        else tip = '这是预算周期的最后一天，超出了 ' + fmtW(F.daySpent - F.allowance) + '。';
+      }
+      put('budget', pass ? 'pass' : 'fail', act, bRule, tip);
+    }
+
+    // food
+    var fr = R.food, fbOn = fr.useFoodBudget && s.foodDaily;
+    var fRule = '至少吃 ' + fr.minMeals + ' 餐，并满足 ' + fr.healthRequired + ' 项健康饮食' + (fbOn ? '，饮食花费不超过 ' + fmtW(s.foodDaily) : '');
+    var meals = d ? MEALS.filter(function (m) { return mealEaten(d.meals[m.id]); }).length : 0;
+    var checks = d ? CHECKS.filter(function (c) { return d.checks[c.id]; }).length : 0;
+    if (!d || (meals === 0 && checks === 0)) put('food', 'none', '未记录', fRule);
+    else {
+      var okMeals = meals >= fr.minMeals, okChecks = checks >= fr.healthRequired;
+      var okBudget = !fbOn || F.dayFood <= s.foodDaily + 0.5;
+      var tips = [];
+      if (!okMeals) tips.push('至少好好吃 ' + fr.minMeals + ' 餐，省钱不要省饭。');
+      if (!okChecks) tips.push('加一份蔬菜或水果，少喝含糖饮料。');
+      if (!okBudget) tips.push('饮食花费超了，可以多自己做饭。');
+      put('food', okMeals && okChecks && okBudget ? 'pass' : 'fail', meals + ' 餐，健康项 ' + checks + '/' + CHECKS.length + (s.foodDaily ? '，饮食花费 ' + fmtW(F.dayFood) : ''), fRule, tips.join(''));
+    }
+
+    // sleep
+    var sr = R.sleep, badRange = sr.minHours > sr.maxHours;
+    var sRule = '睡眠 ' + fmtN(sr.minHours, 1) + '–' + fmtN(sr.maxHours, 1) + ' 小时' + (badRange ? '（最少大于最多，请在设置里修改）' : '');
+    if (!d || d.sleep == null) put('sleep', 'none', '未记录', sRule);
+    else {
+      var okS = d.sleep >= sr.minHours && d.sleep <= sr.maxHours;
+      put('sleep', okS ? 'pass' : 'fail', '睡了 ' + fmtN(d.sleep, 1) + ' 小时', sRule,
+        okS ? '' : (d.sleep < sr.minHours ? '还差 ' + fmtN(sr.minHours - d.sleep, 1) + ' 小时，今晚早点睡。' : '睡得偏多，注意作息规律。'));
+    }
+
+    // move
+    var mr = R.move;
+    var mRule = '步数 ≥ ' + fmtN(mr.minSteps) + '，或运动 ≥ ' + fmtN(mr.altMinutes) + ' 分钟';
+    if (!d || (d.steps == null && d.exMin == null)) put('move', 'none', '未记录', mRule);
+    else {
+      var okM = (d.steps != null && d.steps >= mr.minSteps) || (d.exMin != null && d.exMin >= mr.altMinutes);
+      var mAct = (d.steps != null ? fmtN(d.steps) + ' 步' : '') + (d.exMin != null ? (d.steps != null ? '，' : '') + '运动 ' + fmtN(d.exMin) + ' 分钟' : '');
+      var mTip = '';
+      if (!okM) {
+        var needSteps = Math.max(0, mr.minSteps - (d.steps || 0)), needMin = Math.max(0, mr.altMinutes - (d.exMin || 0));
+        mTip = d.steps != null ? '再多走 ' + fmtN(needSteps) + ' 步就达标，比如提前一站下车。' : '再运动 ' + fmtN(needMin) + ' 分钟就达标，或者多走走路。';
+      }
+      put('move', okM ? 'pass' : 'fail', mAct, mRule, mTip);
+    }
+
+    // body
+    var bRule2 = '身体感受 ≥ ' + BODY[R.body.minScore - 1] + '（勾选“特殊情况”则这一项不计分）';
+    if (d && d.bodySkip) put('body', 'skip', '特殊情况，不计分' + (d.bodyNote ? '：' + d.bodyNote : ''), bRule2);
+    else if (!d || d.body == null) put('body', 'none', '未记录', bRule2);
+    else {
+      var okB = d.body >= R.body.minScore;
+      put('body', okB ? 'pass' : 'fail', BODY[d.body - 1] + (d.bodyNote ? '：' + d.bodyNote : ''), bRule2, okB ? '' : '身体状态不太好，安排轻松一点，早点休息。');
+    }
+
+    DIMS.forEach(function (m) {
+      var st = out.dims[m.key].status;
+      if (st !== 'skip') out.counted++;
+      if (st === 'pass') out.stars++;
+    });
+    return out;
+  }
+
+  function streak(X) {
+    var n = 0, k = X;
+    if (!hasRecord(k)) k = addDays(k, -1);
+    while (hasRecord(k) && n < 3650) { n++; k = addDays(k, -1); }
+    return n;
+  }
+  function weekCount(X) { var n = 0; for (var i = 0; i < 7; i++) if (hasRecord(addDays(X, -i))) n++; return n; }
+  function recordedCount() { return Object.keys(state.days).filter(hasRecord).length; }
+
+  // ---------- capabilities ----------
+  var IN_CLAUDE = !!(window.claude && typeof window.claude.use === 'function');
+  var IS_IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  // On iPhone: false in a Safari tab (or an in-app browser), true when opened from the Home Screen icon.
+  var IOS_TAB = !IN_CLAUDE && IS_IOS && navigator.standalone === false;
+  var IOS_APP = !IN_CLAUDE && IS_IOS && navigator.standalone === true;
+  function askPersist() { try { if (!IN_CLAUDE && navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () {}); } catch (e) {} }
+  var downloadsP = null;
+  function getDownloads() {
+    if (!downloadsP) {
+      try { downloadsP = (window.claude && typeof window.claude.use === 'function') ? Promise.resolve(window.claude.use('downloads')).catch(function () { return null; }) : Promise.resolve(null); }
+      catch (e) { downloadsP = Promise.resolve(null); }
+    }
+    return downloadsP;
+  }
+  getDownloads();
+
+  // ---------- render helpers ----------
+  var $view = document.getElementById('view');
+  var $banners = document.getElementById('banners');
+  var $sheet = document.getElementById('sheetroot');
+  var $toast = document.getElementById('toastroot');
+  var lastToday = null;
+
+  function render() {
+    lastToday = todayKey();
+    document.getElementById('topdate').textContent = fmtDate(lastToday);
+    ['home', 'record', 'settle', 'history', 'settings'].forEach(function (t) {
+      var b = document.getElementById('tab-' + t);
+      b.classList.toggle('on', ui.tab === t);
+      if (ui.tab === t) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+    });
+    renderBanners();
+    var html = { home: viewHome, record: viewRecord, settle: viewSettle, history: viewHistory, settings: viewSettings }[ui.tab]();
+    $view.innerHTML = html;
+  }
+  function rerenderKeepScroll() {
+    var y = window.scrollY, a = document.activeElement;
+    var fid = a && a.id && /^(SELECT|BUTTON)$/.test(a.tagName) ? a.id : null;
+    render(); window.scrollTo(0, y);
+    if (fid) { var f = document.getElementById(fid); if (f) try { f.focus({ preventScroll: true }); } catch (e) {} }
+  }
+
+  // If the page stays open past the day boundary, move "today" views forward.
+  function checkRollover() {
+    if (!state || lastToday == null) return;
+    var T = todayKey();
+    if (T === lastToday) return;
+    var prev = lastToday;
+    var active = document.activeElement;
+    var typing = active && $view.contains(active) && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName);
+    var onPrev = ui.tab === 'record' && (ui.recDate == null || ui.recDate === prev);
+    if (ui.recDate === prev && !typing) ui.recDate = T;
+    if (ui.setDate === prev) ui.setDate = T;
+    // While the user is typing, leave the screen alone; re-check when focus leaves the field.
+    if (typing) { document.getElementById('topdate').textContent = fmtDate(T); return; }
+    rerenderKeepScroll();
+    if (onPrev) toast('新的一天开始了。' + fmtDate(prev) + '的记录已经保存。');
+  }
+  $view.addEventListener('focusout', function () { setTimeout(checkRollover, 0); });
+  var lastW = window.innerWidth, resizeTimer = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () {
+      if (window.innerWidth === lastW) return;
+      lastW = window.innerWidth;
+      var a = document.activeElement;
+      if (ui.tab === 'history' && !(a && $view.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) rerenderKeepScroll();
+    }, 200);
+  });
+
+  function renderBanners() {
+    var h = '';
+    if (corruptRaw != null) {
+      h += '<div class="banner warn"><div><b>之前保存的数据无法读取。</b>原始内容已另存一份，没有被删除。可以先把原始文本复制出来保存。</div>' +
+        '<div class="row"><button type="button" class="btn sm" data-act="show-corrupt">查看原始文本</button></div></div>';
+    }
+    if (IOS_TAB && lsGet(STORE_KEY + ':a2hs-ok') == null) {
+      h += '<div class="banner"><div><b>建议添加到主屏幕。</b>点 Safari 的分享按钮（可能在“…”里），选“添加到主屏幕”，以后只从图标打开。浏览器里和图标里的数据是分开的，不会互通。如果是在 KakaoTalk、微信等 App 里打开的，请先点右上角菜单，选“在 Safari 中打开”。</div>' +
+        '<div class="row"><button type="button" class="btn sm" data-act="a2hs-ok">知道了</button></div></div>';
+    }
+    if (demoMode) {
+      h += '<div class="banner"><div><b>你正在看示例数据。</b>这里的金额和记录都是虚构的，改动不会保存。</div>' +
+        '<div class="row"><button type="button" class="btn primary sm" data-act="start-real">开始使用我的数据</button></div></div>';
+    } else if (!storageOK) {
+      h += '<div class="banner warn"><div><b>浏览器存储现在不可用。</b>这次打开期间的记录，关掉页面后就会丢失。请在“设置”里导出备份。</div></div>';
+    } else {
+      var le = state.meta.lastExport, days = le ? Math.floor((Date.now() - new Date(le).getTime()) / 86400000) : null;
+      if (recordedCount() >= 3 && (le == null || days >= 7)) {
+        h += '<div class="banner warn"><div>' + (le == null ? '你还没有导出过备份。' : '距离上次导出备份已经 ' + days + ' 天。') + '数据只存在这个浏览器里，建议现在备份一次。</div>' +
+          '<div class="row"><button type="button" class="btn sm" data-act="export">导出备份</button></div></div>';
+      }
+    }
+    $banners.innerHTML = h;
+    $banners.hidden = !h;
+  }
+
+  function dimStars(ev) {
+    return DIMS.map(function (m) {
+      var st = ev.dims[m.key].status;
+      return starSvg(st === 'pass' ? 'on' : (st === 'skip' ? 'skip' : ''));
+    }).join('');
+  }
+  function statusWord(st) { return st === 'pass' ? '达标' : st === 'fail' ? '未达标' : st === 'skip' ? '不计分' : '未记录'; }
+
+  // ---------- HOME ----------
+  function viewHome() {
+    var T = todayKey(), s = state.settings;
+    var alloc = buildAlloc();
+    var ev = evaluate(T, alloc), F = ev.F;
+    var h = '';
+    if (!isSetUp()) {
+      h += '<section class="card"><h2>先完成个人设置</h2><p class="muted small" style="margin:0">填上预算开始那天手上的资金、要撑到哪一天和固定支出，首页才能算出每天能花多少。</p>' +
+        '<div class="btnrow"><button type="button" class="btn primary" data-act="tab" data-tab="settings">去设置</button></div></section>';
+    } else if (F.before) {
+      h += '<section class="card"><h2>预算周期还没开始</h2><p class="small" style="margin:0">从 ' + fmtDate(s.startDate) + ' 开始，到 ' + fmtDate(s.endDate) + ' 结束，共 ' + F.totalDays + ' 天。</p>' +
+        '<div class="grid2"><div class="stat"><span class="label">可自由支配</span><span class="v">' + fmtW(F.disp) + '</span></div><div class="stat"><span class="label">基准每日额度</span><span class="v">' + fmtW(F.base) + '</span></div></div></section>';
+    } else if (F.after) {
+      h += '<section class="card"><h2>这个预算周期已经结束</h2><p class="small" style="margin:0">' + fmtDate(s.startDate) + ' 到 ' + fmtDate(s.endDate) + '，结束时剩余预算 <b class="money-text">' + fmtW(F.poolAfter) + '</b>' + (s.reserve ? '，另有期末保留 ' + fmtW(s.reserve) : '') + '。</p>' +
+        '<p class="muted small" style="margin:0">开始新的周期：在设置里把开始日期改成今天，填上今天手上的资金和新的目标日期。</p>' +
+        '<button type="button" class="btn primary" data-act="go-rules-money">设置新的周期</button></section>';
+    } else {
+      var pct = F.allowance > 0 ? Math.min(100, F.daySpent / F.allowance * 100) : (F.daySpent > 0 || F.exhausted ? 100 : 0);
+      var over = F.exhausted || F.daySpent > F.allowance + 0.5;
+      var chip;
+      if (F.poolAfter < -0.5) chip = '<span class="chip bad">预算已超出 ' + fmtW(F.overBy) + '</span>';
+      else if (F.poolAfter <= 0.5 && F.daysLeftAfter > 0) chip = '<span class="chip bad">预算已用完</span>';
+      else if (F.avg === 0) chip = '<span class="chip none">还没有花费记录</span>';
+      else if (F.onTrack) chip = '<span class="chip good">按现在的速度撑得到</span>';
+      else chip = '<span class="chip ' + (F.shortDays > 7 ? 'bad' : 'warn') + '">会提前约 ' + F.shortDays + ' 天用完</span>';
+      var lastsTxt = !isFinite(F.lasts) ? '—' : fmtN(Math.floor(F.lasts)) + ' 天';
+      var todayLine;
+      if (F.exhausted) todayLine = '<span class="small text-bad">预算已经用完' + (-F.poolBefore >= 1 ? '，之前超出 ' + fmtW(-F.poolBefore) : '') + '。</span>';
+      else if (F.daySpent > F.allowance + 0.5) todayLine = '<span class="small text-bad">超出今日额度 ' + fmtW(F.daySpent - F.allowance) + '</span>';
+      else todayLine = '<span class="small muted">今天还可以花 ' + fmtW(F.allowance - F.daySpent) + '</span>';
+      if (s.foodDaily) todayLine += '<span class="small muted">饮食 ' + fmtW(F.dayFood) + ' / ' + fmtW(s.foodDaily) + '</span>';
+
+      h += '<section class="card"><div class="money"><span class="label">剩余可支配资金</span>' +
+        '<span class="big">' + fmtW(F.remAfter) + '</span>' +
+        '<span class="muted small">开始时资金 ' + fmtW(s.balance) + '，预留固定支出 ' + fmtW(F.fixed) + (s.reserve ? '、期末保留 ' + fmtW(s.reserve) : '') + '，已花 ' + fmtW(F.disp - F.remAfter) + '</span></div>' +
+        '<div class="divider"></div>' +
+        '<div style="display:grid;gap:8px"><div class="today-row"><span><span class="label">今日花费（含分摊）</span><br><b class="num">' + fmtW(F.daySpent) + '</b></span>' +
+        '<span style="text-align:right"><span class="label">今日额度</span><br><b class="num">' + fmtW(F.allowance) + '</b></span></div>' +
+        '<div class="bar' + (over ? ' over' : '') + '" role="img" aria-label="今日已用额度 ' + Math.round(pct) + '%"><i style="width:' + pct.toFixed(1) + '%"></i></div>' +
+        '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">' + todayLine + '</div></div></section>';
+
+      h += '<section class="card"><h2><span>生活费还能撑多久</span>' + chip + '</h2>' +
+        '<div class="grid2"><div class="stat"><span class="label">按近 ' + F.paceCount + ' 天速度还能撑</span><span class="v">' + lastsTxt + '</span></div>' +
+        '<div class="stat"><span class="label">距离目标日还有</span><span class="v">' + fmtN(F.daysLeftAfter) + ' 天</span></div>' +
+        '<div class="stat"><span class="label">近 ' + F.paceCount + ' 天日均花费</span><span class="v">' + fmtW(F.avg) + '</span></div>' +
+        '<div class="stat"><span class="label">明日额度</span><span class="v">' + fmtW(F.tomorrow) + '</span></div></div>' +
+        '<span class="muted tiny">目标日 ' + fmtDate(s.endDate) + '。分摊的消费（比如一周的菜）按天平均计算。</span></section>';
+    }
+
+    h += '<section class="card"><h2><span>今日生活状态</span><span class="hint">' + ev.stars + ' / ' + ev.counted + ' 颗星</span></h2><div class="dimrow">' +
+      DIMS.map(function (m) {
+        var d = ev.dims[m.key];
+        return '<div class="d">' + starSvg(d.status === 'pass' ? 'on' : d.status === 'skip' ? 'skip' : '') + '<b style="color:var(--fg)">' + m.name + '</b><span>' + statusWord(d.status) + '</span></div>';
+      }).join('') + '</div>' +
+      '<div class="btnrow"><button type="button" class="btn primary" data-act="go-record" data-date="' + T + '" data-anchor="sec-expense">记一笔消费</button>' +
+      '<button type="button" class="btn" data-act="go-record" data-date="' + T + '" data-anchor="sec-diary">写今天的日记</button></div>' +
+      '<button type="button" class="btn ghost" data-act="go-settle" data-date="' + T + '">查看今日结算</button></section>';
+
+    var sk = streak(T), wk = weekCount(T);
+    h += '<section class="card"><div class="grid2"><div class="stat"><span class="label">连续记录</span><span class="v">' + sk + ' 天</span></div>' +
+      '<div class="stat"><span class="label">最近 7 天记录了</span><span class="v">' + wk + ' / 7 天</span></div></div>' +
+      (s.goalText ? '<div class="small wrapany"><span class="label">我的目标</span><br>' + esc(s.goalText) + '</div>' : '') + '</section>';
+    return h;
+  }
+
+  // ---------- RECORD ----------
+  function viewRecord() {
+    var T = todayKey();
+    var k = ui.recDate && (ui.recDate <= T || state.days[ui.recDate]) ? ui.recDate : T;
+    ui.recDate = k; // pin: inputs on this screen always write to the day that is shown
+    var d = getDay(k) || emptyDay();
+    var dr = (!draft.date || draft.date === k) ? draft : blankDraft(k);
+    var otherDraft = draft.date && draft.date !== k && draftPending();
+    var h = '<div id="rec-form" data-date="' + k + '" class="wrap" style="width:100%">';
+    h += datenav(k, 'rec');
+    h += '<section class="card anchor" id="sec-diary"><h2><span>日记</span><span class="savedot" data-saved></span></h2>' +
+      '<textarea id="f-diary" data-field="diary" placeholder="今天过得怎么样？吃了什么、花了什么钱、身体感觉如何，随手写下来。">' + esc(d.diary) + '</textarea>' +
+      '<span class="muted tiny">V0.1 不会自动从日记里提取数据，下面的项目需要手动填写。之后接入 AI 后，会从这里自动整理。</span></section>';
+
+    var total = d.expenses.reduce(function (a, e) { return a + e.amount; }, 0);
+    h += '<section class="card anchor" id="sec-expense"><h2><span>消费</span><span class="hint">当天付款合计 ' + fmtW(total) + '</span></h2>' +
+      '<div class="grid2"><label class="field"><span>金额（₩）</span><input id="f-amt" type="number" inputmode="numeric" min="0" step="100" placeholder="例如 6500" value="' + esc(dr.amount) + '" data-draft="amount"></label>' +
+      '<label class="field"><span>分摊天数</span><select id="f-spread" data-draft="spread">' + SPREADS.map(function (n) { return '<option value="' + n + '"' + (dr.spread === n ? ' selected' : '') + '>' + (n === 1 ? '不分摊' : n + ' 天') + '</option>'; }).join('') + '</select></label></div>' +
+      '<div class="field"><span>分类</span><div class="cats" role="group" aria-label="分类">' + CATS.map(function (c) { return '<button type="button" data-act="draft-cat" data-cat="' + c.id + '" class="' + (dr.cat === c.id ? 'on' : '') + '" aria-pressed="' + (dr.cat === c.id) + '">' + c.name + '</button>'; }).join('') + '</div></div>' +
+      '<label class="field"><span>备注（可选）</span><input id="f-note" type="text" maxlength="200" placeholder="例如 学校食堂午饭" value="' + esc(dr.note) + '" data-draft="note"></label>' +
+      (otherDraft ? '<div class="note">' + fmtDate(draft.date) + ' 还有一笔' + (num(draft.amount) > 0 ? ' ' + fmtW(num(draft.amount)) : '') + ' 没有添加。<button type="button" class="linkbtn" data-act="go-record" data-date="' + draft.date + '" data-anchor="sec-expense">回到那天</button></div>' : '') +
+      '<div class="err" id="amt-err" hidden></div>' +
+      '<button type="button" class="btn primary" data-act="add-expense">添加这笔消费</button>' +
+      '<span class="muted tiny">房租等已在设置里预留的固定支出不用再记。一次买一周的菜可以选“分摊 7 天”，每天的花费会平均计算。</span>' +
+      '<div class="list">' + (d.expenses.length ? d.expenses.map(function (e) {
+        return '<div class="item"><div class="t"><b>' + CAT[e.cat].name + '</b>' + (e.note ? ' · ' + esc(e.note) : '') + (e.spread > 1 ? '<br><span class="muted tiny">分摊 ' + e.spread + ' 天，每天 ' + fmtW(e.amount / e.spread) + (tailDays(k, e) ? '；预算周期结束后的 ' + tailDays(k, e) + ' 天（' + fmtW(e.amount / e.spread * tailDays(k, e)) + '）算在当天的预算里' : '') + '</span>' : '') + '</div>' +
+          '<div class="amt">' + fmtW(e.amount) + '</div>' +
+          '<div class="acts"><button type="button" class="linkbtn" data-act="edit-expense" data-id="' + esc(e.id) + '">修改</button><button type="button" class="linkbtn danger" data-act="del-expense" data-id="' + esc(e.id) + '">删除</button></div></div>';
+      }).join('') : '<div class="empty">这天还没有消费记录。没花钱的话，可以不填。</div>') + '</div></section>';
+
+    h += '<section class="card anchor" id="sec-food"><h2>饮食</h2>' +
+      MEALS.map(function (m) {
+        var md = d.meals[m.id];
+        return '<div class="meal"><label><input type="checkbox" id="f-meal-' + m.id + '" data-meal="' + m.id + '" data-mk="ate"' + (md.ate ? ' checked' : '') + '>' + m.name + '</label>' +
+          '<input type="text" id="f-mealtxt-' + m.id + '" maxlength="200" data-meal="' + m.id + '" data-mk="text" placeholder="吃了什么（可选）" value="' + esc(md.text) + '"></div>';
+      }).join('') +
+      '<span class="muted tiny">写了吃什么会自动勾选；没吃的话可以取消勾选。</span>' +
+      '<div class="divider"></div><div class="label">健康饮食（符合的打勾）</div>' +
+      CHECKS.map(function (c) { return '<label class="check"><input type="checkbox" id="f-chk-' + c.id + '" data-check="' + c.id + '"' + (d.checks[c.id] ? ' checked' : '') + '>' + c.name + '</label>'; }).join('') +
+      '</section>';
+
+    h += '<section class="card anchor" id="sec-health"><h2><span>睡眠和运动</span><span class="hint">可以从 iPhone“健康”App 里抄</span></h2>' +
+      '<div class="grid3"><label class="field"><span>睡眠（小时）</span><input id="f-sleep" type="number" inputmode="decimal" min="0" max="24" step="0.5" placeholder="7" value="' + (d.sleep == null ? '' : d.sleep) + '" data-field="sleep"></label>' +
+      '<label class="field"><span>步数</span><input id="f-steps" type="number" inputmode="numeric" min="0" step="100" placeholder="8000" value="' + (d.steps == null ? '' : d.steps) + '" data-field="steps"></label>' +
+      '<label class="field"><span>运动（分钟）</span><input id="f-ex" type="number" inputmode="numeric" min="0" step="5" placeholder="0" value="' + (d.exMin == null ? '' : d.exMin) + '" data-field="exMin"></label></div>' +
+      '<div class="note" id="health-note" hidden></div></section>';
+
+    h += '<section class="card anchor" id="sec-body"><h2>身体感受</h2>' +
+      '<div class="seg" role="group" aria-label="身体感受">' + BODY.map(function (b, i) { return '<button type="button" data-act="body" data-v="' + (i + 1) + '" class="' + (d.body === i + 1 ? 'on' : '') + '" aria-pressed="' + (d.body === i + 1) + '">' + b + '</button>'; }).join('') + '</div>' +
+      '<span class="muted tiny">再点一次已选的选项可以取消。</span>' +
+      '<input type="text" id="f-bodynote" maxlength="200" data-field="bodyNote" placeholder="具体感觉（可选），比如 有点感冒" value="' + esc(d.bodyNote) + '">' +
+      '<label class="check"><input type="checkbox" id="f-bodyskip" data-field="bodySkip"' + (d.bodySkip ? ' checked' : '') + '>特殊情况（生病、经期等），这一项今天不计分</label></section>';
+
+    h += '<div class="btnrow"><button type="button" class="btn primary" data-act="go-settle" data-date="' + k + '">查看这天的结算</button></div>';
+    if (hasRecord(k)) h += '<button type="button" class="btn ghost" data-act="clear-day">清空这天的全部记录</button>';
+    h += '</div>';
+    return h;
+  }
+  function recDateShown() { var f = document.getElementById('rec-form'); return f ? f.getAttribute('data-date') : (ui.recDate || todayKey()); }
+
+  function datenav(k, which) {
+    var T = todayKey();
+    var rel = k === T ? '今天' : k === addDays(T, -1) ? '昨天' : k > T ? '未来的日期' : diffDays(T, k) + ' 天前';
+    return '<div class="datenav"><button type="button" class="iconbtn" data-act="day" data-which="' + which + '" data-delta="-1" aria-label="前一天"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>' +
+      '<div class="mid"><b>' + fmtDate(k) + '</b><span class="muted tiny">' + rel + '</span>' + (k !== T ? '<button type="button" class="linkbtn" data-act="day-today" data-which="' + which + '">回到今天</button>' : '') + '</div>' +
+      '<button type="button" class="iconbtn" data-act="day" data-which="' + which + '" data-delta="1" aria-label="后一天"' + (k >= T ? ' disabled' : '') + '><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button></div>';
+  }
+
+  // ---------- SETTLE ----------
+  function viewSettle() {
+    var T = todayKey();
+    var k = ui.setDate && (ui.setDate <= T || state.days[ui.setDate]) ? ui.setDate : T;
+    ui.setDate = k;
+    var ev = evaluate(k), F = ev.F, d = ev.d;
+    var h = datenav(k, 'set');
+    var dayLabel = isSetUp() && F.inPeriod ? 'DAY ' + F.dayNo + ' 结算' : '每日结算';
+    h += '<section class="result" aria-label="每日结算"><div class="eyebrow">' + dayLabel + ' · ' + fmtDate(k) + '</div>' +
+      '<div class="rstars" role="img" aria-label="' + ev.stars + ' 颗星，共 ' + ev.counted + ' 颗">' + dimStars(ev) + '</div>' +
+      '<div class="score">' + ev.stars + ' / ' + ev.counted + '<small>' + (ev.counted < 5 ? '颗星（' + (5 - ev.counted) + ' 项不计分）' : '颗星') + '</small></div>' +
+      (isSetUp() && F.inPeriod ? '<div class="cols"><div><div class="label">当天花费</div><div class="v">' + fmtW(F.daySpent) + '</div></div>' +
+        '<div><div class="label">当天额度</div><div class="v">' + fmtW(F.allowance) + '</div></div>' +
+        '<div><div class="label">次日额度</div><div class="v">' + (F.tomorrow == null ? '周期结束' : fmtW(F.tomorrow)) + '</div></div></div>' : '') +
+      '</section>';
+
+    if (!ev.recorded) {
+      h += '<section class="card"><h2>这天还没有记录</h2><p class="muted small" style="margin:0">记录之后这里会显示五星结算和总结。</p>' +
+        '<button type="button" class="btn primary" data-act="go-record" data-date="' + k + '">去记录这一天</button></section>';
+    } else {
+      h += '<section class="card summary"><h2><span>当日总结</span><span class="hint">按下面的规则生成，不是 AI 分析</span></h2>' + summaryHtml(ev) + '</section>';
+    }
+
+    h += '<section class="card"><h2><span>五个维度</span><button type="button" class="linkbtn" data-act="go-rules">调整规则</button></h2><div>' +
+      DIMS.map(function (m) {
+        var x = ev.dims[m.key];
+        var chip = x.status === 'pass' ? '<span class="chip good">达标</span>' : x.status === 'fail' ? '<span class="chip warn">未达标</span>' : '<span class="chip none">' + statusWord(x.status) + '</span>';
+        return '<div class="dim">' + starSvg(x.status === 'pass' ? 'on' : x.status === 'skip' ? 'skip' : '') +
+          '<div class="nm"><span>' + m.name + '</span>' + chip + '</div>' +
+          '<div class="small">' + esc(x.actual) + '</div>' +
+          '<div class="rule">规则：' + esc(x.rule) + '</div>' + (x.tip ? '<div class="tip">' + esc(x.tip) + '</div>' : '') + '</div>';
+      }).join('') + '</div></section>';
+
+    h += '<section class="card"><h2>这天的日记</h2>' + (d && d.diary.trim() ? '<div class="diarybox">' + esc(d.diary) + '</div>' : '<div class="empty">这天没有写日记。</div>') +
+      '<button type="button" class="btn" data-act="go-record" data-date="' + k + '">修改这天的记录</button></section>';
+
+    h += '<section class="card"><div class="grid2"><div class="stat"><span class="label">连续记录</span><span class="v">' + streak(k) + ' 天</span></div>' +
+      '<div class="stat"><span class="label">截至这天的 7 天里</span><span class="v">' + weekCount(k) + ' / 7 天</span></div></div></section>';
+    return h;
+  }
+
+  function summaryHtml(ev) {
+    var F = ev.F, s = state.settings, D = ev.dims, p = [];
+    var isToday = ev.X === todayKey(), dayWord = isToday ? '今天' : '这天';
+    if (isSetUp() && F.inPeriod) {
+      var t = dayWord + '花了 <b class="money-text">' + fmtW(F.daySpent) + '</b>（分摊后）';
+      if (F.exhausted) t += '，但预算在这之前已经用完了' + (-F.poolBefore >= 1 ? '（超出 ' + fmtW(-F.poolBefore) + '）' : '') + '。';
+      else t += '，当天额度是 ' + fmtW(F.allowance) + '，' + (F.daySpent > F.allowance + 0.5 ? '超出 ' + fmtW(F.daySpent - F.allowance) + '。' : '还剩 ' + fmtW(F.allowance - F.daySpent) + '。');
+      p.push(t);
+      if (F.poolAfter <= 0.5 && F.daysLeftAfter > 0 && F.poolAfter >= -0.5) {
+        p.push('到' + dayWord + '为止，可支配预算正好用完，之后每天的额度是 ₩0。需要补充资金，或者在设置里减少固定支出、期末保留金额。');
+      } else if (F.poolAfter < -0.5) {
+        p.push('到' + dayWord + '为止，花费已经比可支配预算多 <b class="money-text">' + fmtW(F.overBy) + '</b>。需要补充资金，或者在设置里减少固定支出、期末保留金额。');
+      } else if (F.avg > 0) {
+        if (F.onTrack) p.push('按近 ' + F.paceCount + ' 天平均每天 ' + fmtW(F.avg) + ' 的速度，剩下的预算可以撑到目标日 ' + fmtDate(s.endDate) + '。');
+        else p.push('按近 ' + F.paceCount + ' 天平均每天 ' + fmtW(F.avg) + ' 的速度，钱会比目标日早大约 <b>' + F.shortDays + ' 天</b>用完。');
+      }
+      if (F.tomorrow != null && F.tomorrow >= 1) {
+        p.push((F.daySpent > F.allowance + 0.5 ? '超出的部分已经平均摊到之后的每一天，' : '没花完的部分会留给之后的日子，') + '从次日起每天额度是 <b class="money-text">' + fmtW(F.tomorrow) + '</b>。');
+      } else if (F.tomorrow == null) {
+        p.push('这是预算周期的最后一天。');
+      }
+    } else if (!isSetUp()) {
+      p.push('还没有设置资金，预算这一项暂时不计分。');
+    } else {
+      p.push('这天不在预算周期（' + fmtDate(s.startDate) + ' 到 ' + fmtDate(s.endDate) + '）内，预算不计分。');
+    }
+    var good = [], bad = [], none = [];
+    DIMS.forEach(function (m) { var st = D[m.key].status; if (st === 'pass') good.push(m.name); else if (st === 'fail') bad.push(m.name); else if (st === 'none') none.push(m.name); });
+    if (good.length) p.push('达标：' + good.join('、') + '。');
+    if (bad.length) p.push('未达标：' + bad.join('、') + '。');
+    if (none.length) p.push('还没记录：' + none.join('、') + '。');
+    var tip = '';
+    for (var i = 0; i < DIMS.length; i++) { var x = D[DIMS[i].key]; if (x.status === 'fail' && x.tip) { tip = x.tip; break; } }
+    if (tip) p.push('<b>接下来可以先做到：</b>' + esc(tip));
+    else if (!bad.length && !none.length && good.length) p.push('<b>' + dayWord + '计分的每一项都达标了。</b>');
+    else if (!bad.length && none.length && good.length) p.push('已经记录的项目都达标了，把剩下的也记上吧。');
+    return p.map(function (x) { return '<p>' + x + '</p>'; }).join('');
+  }
+
+  // ---------- HISTORY ----------
+  function viewHistory() {
+    var T = todayKey(), s = state.settings, alloc = buildAlloc();
+    var keys = Object.keys(state.days).filter(hasRecord).sort().reverse();
+    var range = ui.histRange;
+    var h = '<div class="seg" role="group" aria-label="统计范围">' + [[7, '近 7 天'], [30, '近 30 天'], [0, '整个周期']].map(function (r) {
+      return '<button type="button" data-act="hist-range" data-v="' + r[0] + '" class="' + (range === r[0] ? 'on' : '') + '" aria-pressed="' + (range === r[0]) + '">' + r[1] + '</button>';
+    }).join('') + '</div>';
+
+    if (range === 0 && T < s.startDate) {
+      h += '<section class="card"><div class="empty">预算周期从 ' + fmtDate(s.startDate) + ' 开始。到那天以后，这里会显示整个周期的统计。</div></section>';
+      return h + recordList(keys, alloc);
+    }
+    var from, to;
+    if (range === 0) { to = T < s.endDate ? T : s.endDate; from = s.startDate; if (from > to) from = to; }
+    else { to = T; from = addDays(T, -(range - 1)); }
+    var n = diffDays(to, from) + 1;
+    var days = []; for (var i = 0; i < n; i++) days.push(addDays(from, i));
+    var spent = 0, paid = 0, food = 0, cats = {}, recDays = 0, starSum = 0, starCnt = 0, sl = [], st = [];
+    days.forEach(function (k) {
+      var a = alloc[k]; if (a) { spent += a.total; food += a.food; Object.keys(a.cats).forEach(function (c) { cats[c] = (cats[c] || 0) + a.cats[c]; }); }
+      paid += dayActual(k);
+      if (hasRecord(k)) {
+        recDays++;
+        var ev = evaluate(k, alloc); starSum += ev.stars; starCnt += ev.counted;
+        var d = state.days[k]; if (d.sleep != null) sl.push(d.sleep); if (d.steps != null) st.push(d.steps);
+      }
+    });
+    function avg(a) { return a.length ? a.reduce(function (x, y) { return x + y; }, 0) / a.length : null; }
+
+    h += '<section class="card"><h2><span>统计</span><span class="hint">' + fmtShort(from) + ' – ' + fmtShort(to) + '，共 ' + n + ' 天</span></h2><div class="grid2 stats">' +
+      '<div class="stat"><span class="label">花费（分摊后）</span><span class="v">' + fmtW(spent) + '</span></div>' +
+      '<div class="stat"><span class="label">日均花费</span><span class="v">' + fmtW(spent / n) + '</span></div>' +
+      '<div class="stat"><span class="label">实际付款</span><span class="v">' + fmtW(paid) + '</span></div>' +
+      '<div class="stat"><span class="label">饮食花费</span><span class="v">' + fmtW(food) + '</span></div>' +
+      '<div class="stat"><span class="label">记录天数</span><span class="v">' + recDays + ' / ' + n + '</span></div>' +
+      '<div class="stat"><span class="label">星级达成率</span><span class="v">' + (starCnt ? Math.round(starSum / starCnt * 100) + '%' : '—') + '</span></div>' +
+      '<div class="stat"><span class="label">平均睡眠</span><span class="v">' + (avg(sl) == null ? '—' : fmtN(avg(sl), 1) + ' 小时') + '</span></div>' +
+      '<div class="stat"><span class="label">平均步数</span><span class="v">' + (avg(st) == null ? '—' : fmtN(avg(st))) + '</span></div>' +
+      '</div><span class="muted tiny">星级达成率 = 已记录的天里拿到的星 ÷ 计分的星（' + starSum + ' / ' + starCnt + '）。分摊的消费按天平均，所以“花费”和“实际付款”可能不同。</span></section>';
+
+    h += '<section class="card"><h2>每日花费（分摊后）</h2>' + spendChart(days, alloc) + '</section>';
+
+    var catList = CATS.map(function (c) { return { c: c, v: cats[c.id] || 0 }; }).filter(function (x) { return x.v > 0.5; }).sort(function (a, b) { return b.v - a.v; });
+    var maxC = catList.length ? catList[0].v : 1;
+    h += '<section class="card"><h2>分类花费</h2>' + (catList.length ? '<div class="hbars">' + catList.map(function (x) {
+      return '<span>' + x.c.name + '</span><span class="track"><i style="width:' + (x.v / maxC * 100).toFixed(1) + '%"></i></span><span class="v">' + fmtW(x.v) + '</span>';
+    }).join('') + '</div>' : '<div class="empty">这段时间没有消费记录。</div>') + '</section>';
+
+    return h + recordList(keys, alloc);
+  }
+  function recordList(keys, alloc) {
+    return '<section class="card"><h2><span>所有记录</span><span class="hint">' + keys.length + ' 天</span></h2><div>' + (keys.length ? keys.map(function (k) {
+      var ev = evaluate(k, alloc), dd = state.days[k];
+      return '<div class="hrow"><div><b>' + fmtDate(k) + '</b><div class="stars" aria-label="' + ev.stars + ' 颗星">' + dimStars(ev) + '</div></div>' +
+        '<div style="text-align:right"><span class="muted tiny">付款</span> <b class="num">' + fmtW(dayActual(k)) + '</b><div class="muted tiny">' + ev.stars + ' / ' + ev.counted + ' 颗星</div></div>' +
+        (dd.diary.trim() ? '<div class="muted small wrapany" style="grid-column:1/-1">' + esc(dd.diary.slice(0, 60)) + (dd.diary.length > 60 ? '…' : '') + '</div>' : '') +
+        '<div class="acts"><button type="button" class="linkbtn" data-act="go-record" data-date="' + k + '">修改记录</button><button type="button" class="linkbtn" data-act="go-settle" data-date="' + k + '">查看结算</button></div></div>';
+    }).join('') : '<div class="empty">还没有任何记录。</div>') + '</div></section>';
+  }
+
+  function spendChart(days, alloc) {
+    var W = Math.round(Math.max(256, Math.min(448, (window.innerWidth || 390) - 64)));
+    var H = 160, padL = 46, padR = 6, padT = 10, padB = 24;
+    var vals = days.map(function (k) { return alloc[k] ? alloc[k].total : 0; });
+    var ref = isSetUp() ? finance(days[days.length - 1], alloc).base : null;
+    if (ref != null && ref <= 0) ref = null;
+    var max = Math.max.apply(null, vals.concat([ref || 0, 1]));
+    var nice = niceMax(max);
+    var iw = W - padL - padR, ih = H - padT - padB;
+    var bw = iw / days.length, gap = Math.min(4, bw * 0.25);
+    var y = function (v) { return padT + ih - v / nice * ih; };
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="group" aria-label="每日花费柱状图">';
+    [0, 0.5, 1].forEach(function (f) {
+      var v = nice * f, yy = y(v);
+      svg += '<line class="gridline" x1="' + padL + '" x2="' + (W - padR) + '" y1="' + yy + '" y2="' + yy + '"/>';
+      svg += '<text x="' + (padL - 6) + '" y="' + (yy + 4) + '" text-anchor="end">' + shortW(v) + '</text>';
+    });
+    days.forEach(function (k, i) {
+      var v = vals[i], x = padL + i * bw + gap / 2, w = Math.max(1, bw - gap), top = y(v), hgt = padT + ih - top;
+      var over = ref != null && v > ref + 0.5;
+      if (v > 0.5) {
+        var r = Math.min(4, w / 2, hgt);
+        svg += '<path class="barm' + (over ? ' over' : '') + (ui.chartSel === k ? ' sel' : '') + '" d="M' + x + ',' + (padT + ih) + 'V' + (top + r) + 'Q' + x + ',' + top + ' ' + (x + r) + ',' + top + 'H' + (x + w - r) + 'Q' + (x + w) + ',' + top + ' ' + (x + w) + ',' + (top + r) + 'V' + (padT + ih) + 'Z"/>';
+      }
+      svg += '<rect class="hit" tabindex="0" role="button" aria-label="' + fmtDate(k) + ' ' + fmtW(v) + '" data-act="chart-sel" data-date="' + k + '" x="' + (padL + i * bw) + '" y="' + padT + '" width="' + bw + '" height="' + (ih + padB) + '"></rect>';
+    });
+    var maxLabels = Math.max(2, Math.floor(iw / 44));
+    var step = Math.max(1, Math.ceil(days.length / maxLabels));
+    days.forEach(function (k, i) {
+      var last = i === days.length - 1;
+      if ((i % step === 0 && (days.length - 1 - i >= step || last)) || last) {
+        svg += '<text x="' + (padL + i * bw + bw / 2) + '" y="' + (H - 6) + '" text-anchor="middle">' + fmtShort(k) + '</text>';
+      }
+    });
+    if (ref != null) svg += '<line class="ref" x1="' + padL + '" x2="' + (W - padR) + '" y1="' + y(ref) + '" y2="' + y(ref) + '"/>';
+    svg += '</svg>';
+    var sel = ui.chartSel && days.indexOf(ui.chartSel) >= 0 ? ui.chartSel : null;
+    var readout = sel ? fmtDate(sel) + '：' + fmtW(alloc[sel] ? alloc[sel].total : 0) + (ref != null ? '（基准每日额度 ' + fmtW(ref) + '）' : '') : '点一下柱子查看那天的花费。';
+    return '<div class="chart">' + svg + '</div><div class="readout" aria-live="polite">' + readout + '</div>' +
+      '<div class="legend"><span><i></i>' + (ref != null ? '在基准额度内' : '每日花费') + '</span>' + (ref != null ? '<span><i class="over"></i>超过基准额度</span><span><i class="ref"></i>基准每日额度 ' + fmtW(ref) + '</span>' : '') + '</div>';
+  }
+  function niceMax(v) { var p = Math.pow(10, Math.floor(Math.log10(v))); var m = v / p; var n = m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10; return n * p; }
+  function shortW(v) {
+    if (v >= 100000000) return +(v / 100000000).toFixed(1) + '亿';
+    if (v >= 10000) return +(v / 10000).toFixed(1) + '万';
+    return Math.round(v).toLocaleString('ko-KR');
+  }
+
+  // ---------- SETTINGS ----------
+  function viewSettings() {
+    var s = state.settings, R = s.rules;
+    var h = '';
+    var errs = settingsErrors();
+    h += '<section class="card anchor" id="sec-money"><h2><span>资金和预算周期</span><span class="savedot" data-saved></span></h2>' +
+      '<label class="field"><span>预算开始那天手上的资金（₩）</span><input id="s-balance" type="number" inputmode="numeric" min="0" step="1000" placeholder="例如 3000000" value="' + (s.balance == null ? '' : s.balance) + '" data-set="balance"></label>' +
+      '<span class="muted tiny">填开始日期那天手上的钱。以后不用改成当前余额，记下的花费会自动扣掉。如果数字对不上，把开始日期改成今天，再填今天的余额。</span>' +
+      '<div class="grid2 stack-narrow"><label class="field"><span>预算开始日期</span><input id="s-start" type="date" value="' + s.startDate + '" data-set="startDate"></label>' +
+      '<label class="field"><span>需要撑到哪一天</span><input id="s-end" type="date" value="' + s.endDate + '" data-set="endDate"></label></div>' +
+      '<label class="field"><span>到期时希望至少剩下（₩）</span><input id="s-reserve" type="number" inputmode="numeric" min="0" step="1000" placeholder="0" value="' + (s.reserve || '') + '" data-set="reserve"></label>' +
+      '<div class="err" id="set-err"' + (errs ? '' : ' hidden') + '>' + esc(errs) + '</div></section>';
+
+    h += '<section class="card"><h2><span>期间内的固定支出</span><span class="hint">会先从资金里预留</span></h2><div class="list">' +
+      (s.fixedCosts.length ? s.fixedCosts.map(function (f) {
+        return '<div class="item"><div class="t">' + esc(f.name) + '</div><div class="amt">' + fmtW(f.amount) + '</div><div class="acts"><button type="button" class="linkbtn danger" data-act="del-fixed" data-id="' + esc(f.id) + '">删除</button></div></div>';
+      }).join('') : '<div class="empty">还没有固定支出。房租、手机费、交通卡月票等写在这里，填整个预算周期内的总额。</div>') + '</div>' +
+      '<div class="grid2 stack-narrow"><input id="s-fx-name" type="text" maxlength="80" placeholder="名称，如 房租"><input id="s-fx-amt" type="number" inputmode="numeric" min="0" step="1000" placeholder="金额"></div>' +
+      '<div class="err" id="fx-err" hidden></div>' +
+      '<button type="button" class="btn" data-act="add-fixed">添加固定支出</button></section>';
+
+    h += '<section class="card" id="calc-card">' + calcCard() + '</section>';
+
+    var fbDisabled = s.foodDaily == null;
+    h += '<section class="card"><h2>个人目标</h2>' +
+      '<label class="field"><span>想改善什么（写给自己看）</span><textarea id="s-goal" maxlength="500" style="min-height:80px" data-set="goalText" placeholder="例如 规律睡觉，少点外卖，撑到学期结束还剩 10 万">' + esc(s.goalText) + '</textarea></label>' +
+      '<label class="field"><span>每日饮食预算（₩，可选）</span><input id="s-food" type="number" inputmode="numeric" min="0" step="500" placeholder="例如 12000" value="' + (s.foodDaily == null ? '' : s.foodDaily) + '" data-set="foodDaily"></label>' +
+      '<div class="err" id="food-err" hidden></div>' +
+      '<label class="field"><span>一天从几点开始算（凌晨熬夜写的记录算前一天）</span><select id="s-dayhour" data-set="dayStartHour">' + [0, 1, 2, 3, 4, 5, 6].map(function (n) { return '<option value="' + n + '"' + (s.dayStartHour === n ? ' selected' : '') + '>凌晨 ' + n + ' 点</option>'; }).join('') + '</select></label></section>';
+
+    h += '<section class="card anchor" id="sec-rules"><h2><span>评分规则</span><button type="button" class="linkbtn" data-act="reset-rules">恢复默认</button></h2>' +
+      '<div class="label">预算星</div>' +
+      '<div class="seg" role="group" aria-label="预算星规则"><button type="button" data-act="rule-mode" data-v="pace" class="' + (R.budget.mode === 'pace' ? 'on' : '') + '" aria-pressed="' + (R.budget.mode === 'pace') + '">看整体节奏</button><button type="button" data-act="rule-mode" data-v="daily" class="' + (R.budget.mode === 'daily' ? 'on' : '') + '" aria-pressed="' + (R.budget.mode === 'daily') + '">看当天额度</button></div>' +
+      '<span class="muted tiny">' + (R.budget.mode === 'pace' ? '推荐。按最近几天的平均花费，判断能不能撑到目标日。买一次菜、聚一次餐不会直接丢星。' : '当天花费（分摊后）不超过当天额度才拿星，更严格。') + '</span>' +
+      (R.budget.mode === 'pace' ? ruleNum('budget.paceDays', '平均天数（1–30）', R.budget.paceDays) : '') +
+      '<div class="divider"></div><div class="label">饮食星</div><div class="grid2">' +
+      ruleNum('food.minMeals', '最少餐数（1–3）', R.food.minMeals) + ruleNum('food.healthRequired', '健康项至少（0–3）', R.food.healthRequired) + '</div>' +
+      '<label class="check' + (fbDisabled ? ' disabled' : '') + '" id="r-foodbudget-wrap"><input type="checkbox" id="r-foodbudget" data-rule="food.useFoodBudget"' + (R.food.useFoodBudget ? ' checked' : '') + (fbDisabled ? ' disabled' : '') + '><span>饮食花费也不能超过每日饮食预算<span class="tiny" id="r-foodbudget-hint"' + (fbDisabled ? '' : ' hidden') + '>（先在上面填每日饮食预算）</span></span></label>' +
+      '<div class="divider"></div><div class="label">睡眠星</div><div class="grid2">' +
+      ruleNum('sleep.minHours', '最少（小时）', R.sleep.minHours) + ruleNum('sleep.maxHours', '最多（小时）', R.sleep.maxHours) + '</div>' +
+      '<div class="err" id="sleep-err"' + (R.sleep.minHours > R.sleep.maxHours ? '' : ' hidden') + '>最少睡眠不能大于最多睡眠，否则睡眠星永远拿不到。</div>' +
+      '<div class="divider"></div><div class="label">运动星</div><div class="grid2">' +
+      ruleNum('move.minSteps', '步数至少', R.move.minSteps) + ruleNum('move.altMinutes', '或运动分钟', R.move.altMinutes) + '</div>' +
+      '<div class="divider"></div><div class="label">身体星</div>' +
+      '<label class="field"><span>身体感受至少</span><select id="r-body" data-rule="body.minScore">' + BODY.map(function (b, i) { return '<option value="' + (i + 1) + '"' + (R.body.minScore === i + 1 ? ' selected' : '') + '>' + b + '</option>'; }).join('') + '</select></label>' +
+      '<div class="note" id="rule-note" hidden></div>' +
+      '<span class="muted tiny">不吃饭永远拿不到饮食星；预算星不会因为花得更少而加分。改动规则后，历史记录的星级会按新规则重新计算。</span></section>';
+
+    h += dataSection();
+    return h;
+  }
+  function calcCard() {
+    var s = state.settings, disp = disposable(), pd = periodDays();
+    return '<h2>算出来的预算</h2><div class="grid2">' +
+      '<div class="stat"><span class="label">预算周期</span><span class="v">' + pd + ' 天</span></div>' +
+      '<div class="stat"><span class="label">可自由支配</span><span class="v">' + (s.balance == null ? '—' : fmtW(disp)) + '</span></div>' +
+      '<div class="stat" style="grid-column:1/-1"><span class="label">基准每日额度 = 可自由支配 ÷ 周期天数</span><span class="v">' + (s.balance == null ? '—' : fmtW(Math.max(0, disp) / pd)) + '</span></div></div>' +
+      '<span class="muted tiny">可自由支配 = 开始时资金 − 固定支出 − 期末保留。每天的实际额度会根据已经花掉的钱重新计算：剩余预算 ÷ 剩余天数。</span>';
+  }
+  function ruleNum(path, label, v) {
+    var sp = RULE_SPEC[path];
+    return '<label class="field"><span>' + label + '</span><input id="r-' + path.replace('.', '-') + '" type="number" inputmode="decimal" min="' + sp.min + '" max="' + sp.max + '" step="' + sp.step + '" value="' + esc(v) + '" data-rule="' + path + '"></label>';
+  }
+  var balanceInputError = '', dateInputNote = '';
+  function settingsErrors() {
+    var s = state.settings, e = [];
+    if (balanceInputError) e.push(balanceInputError);
+    if (dateInputNote) e.push(dateInputNote);
+    if (s.endDate < s.startDate) e.push('“需要撑到哪一天”不能早于开始日期。');
+    if (s.balance != null && disposable() < 0) e.push('固定支出和期末保留加起来已经超过资金，可自由支配资金是负数。');
+    return e.join('');
+  }
+
+  function dataSection() {
+    var le = state.meta.lastExport;
+    var n = recordedCount();
+    var size = 0; try { size = new Blob([JSON.stringify(state)]).size; } catch (e) {}
+    return '<section class="card anchor" id="sec-data"><h2>数据和备份</h2>' +
+      '<div class="small">' + (demoMode ? '现在是示例数据，不会保存到浏览器。' : storageOK ? '数据保存在<b>这个浏览器</b>里，共 ' + n + ' 天记录，约 ' + Math.max(1, Math.ceil(size / 1024)) + ' KB。' : '<span class="text-bad">浏览器存储不可用，关掉页面后数据会丢失。</span>') +
+      '<br><span class="muted">上次导出备份：' + (le ? fmtDate(keyOf(new Date(le))) : '还没有') + '</span></div>' +
+      '<div class="btnrow"><button type="button" class="btn primary" data-act="export">导出备份（JSON）</button><button type="button" class="btn" data-act="copy-json">复制备份文本</button></div>' +
+      '<div class="divider"></div><div class="label">从备份恢复</div>' +
+      '<input id="importfile" class="vh" type="file" accept=".json,application/json,text/plain"><label class="btn filebtn" for="importfile">选择备份文件</label>' +
+      '<details><summary class="small">或者粘贴备份文本</summary><div style="display:grid;gap:8px;margin-top:8px"><textarea id="importtext" class="code" style="min-height:100px" placeholder="把导出的 JSON 文本粘贴到这里"></textarea><button type="button" class="btn" data-act="import-text">导入粘贴的内容</button></div></details>' +
+      '<div class="err" id="import-err" hidden></div>' +
+      '<div class="divider"></div>' +
+      '<details><summary class="small">关于数据保存（请读一下）</summary><div class="small muted" style="display:grid;gap:6px;margin-top:6px">' +
+      '<p style="margin:0">这个原型把数据存在浏览器的本地存储（localStorage）里，没有服务器，也不会上传。</p>' +
+      '<p style="margin:0">数据只在<b>同一台设备、同一个浏览器</b>里可见。换手机、换浏览器、用无痕模式、清理网站数据，都会让记录消失；在 iPhone 的 Safari 里，长时间不打开的网站数据也可能被系统自动清理。</p>' +
+      '<p style="margin:0">刷新页面、以后更新这个原型，通常不会清掉数据，但<b>不能保证</b>。请养成每周导出一次备份的习惯。</p></div></details>' +
+      '<div class="divider"></div>' +
+      '<button type="button" class="btn danger" data-act="clear-all">清空所有数据</button></section>';
+  }
+
+  // ---------- sheet, toast ----------
+  function openSheet(html) {
+    $sheet.innerHTML = '<div class="scrim" data-act="sheet-scrim"><div class="sheet" role="dialog" aria-modal="true">' + html + '</div></div>';
+  }
+  function closeSheet() { $sheet.innerHTML = ''; }
+  var toastTimer = null, undoFn = null;
+  function toast(msg, undo) {
+    clearTimeout(toastTimer); undoFn = undo || null;
+    $toast.innerHTML = '<div class="toast' + ($sheet.innerHTML ? ' top' : '') + '" role="status"><span>' + esc(msg) + '</span>' + (undo ? '<button type="button" data-act="undo">撤销</button>' : '') + '</div>';
+    toastTimer = setTimeout(function () { $toast.innerHTML = ''; undoFn = null; }, undo ? 5000 : 2200);
+  }
+  function markSaved() {
+    var els = document.querySelectorAll('[data-saved]');
+    var txt = demoMode ? '示例数据不保存' : storageOK ? '已保存' : '未能保存';
+    for (var i = 0; i < els.length; i++) els[i].textContent = txt;
+    if (!storageOK) renderBanners();
+  }
+
+  // ---------- actions ----------
+  function go(tab, opts) {
+    opts = opts || {};
+    if (ui.tab === 'record' && tab !== 'record') { syncDraftFromDom(); if (num(draft.amount) > 0) toast((draft.date ? fmtDate(draft.date) + ' ' : '') + '还有一笔 ' + fmtW(num(draft.amount)) + ' 没有添加，回到“记录”可以继续'); }
+    if (tab === 'settings' && ui.tab !== 'settings') { balanceInputError = ''; dateInputNote = ''; }
+    ui.tab = tab;
+    if (tab === 'record') ui.recDate = opts.date || (draftPending() && draft.date ? draft.date : null);
+    if (tab === 'settle') ui.setDate = opts.date || null;
+    render();
+    var anchor = opts.anchor && document.getElementById(opts.anchor);
+    if (anchor) anchor.scrollIntoView({ block: 'start' }); else window.scrollTo(0, 0);
+    if (opts.focus) { var f = document.getElementById(opts.focus); if (f) try { f.focus({ preventScroll: true }); } catch (e) {} }
+  }
+
+  function addExpense() {
+    var k = recDateShown();
+    syncDraftFromDom();
+    var amt = draft.date === k ? num(draft.amount) : null;
+    var err = document.getElementById('amt-err');
+    if (amt == null || amt <= 0) { err.textContent = '请输入大于 0 的金额。'; err.hidden = false; document.getElementById('f-amt').focus(); return; }
+    if (amt > 1e10) { err.textContent = '金额太大了，请检查一下。'; err.hidden = false; return; }
+    var d = ensureDay(k);
+    var cat = draft.date === k ? draft.cat : 'meal';
+    d.expenses.push({ id: uid(), amount: Math.round(amt), cat: cat, note: draft.note.trim().slice(0, 200), spread: Math.max(1, +draft.spread || 1) });
+    resetDraft();
+    saveNow(); render();
+    var sec = document.getElementById('sec-expense'); if (sec) sec.scrollIntoView({ block: 'start' });
+    toast('已添加 ' + fmtW(amt));
+  }
+
+  function findExpense(k, id) {
+    var d = getDay(k); if (!d) return null;
+    for (var i = 0; i < d.expenses.length; i++) if (d.expenses[i].id === id) return { d: d, i: i, e: d.expenses[i] };
+    return null;
+  }
+  function editExpense(id) {
+    var k = recDateShown(), f = findExpense(k, id); if (!f) return;
+    var e = f.e;
+    openSheet('<h3>修改消费</h3>' +
+      '<label class="field"><span>金额（₩）</span><input id="ee-amt" type="number" inputmode="numeric" min="0" step="100" value="' + e.amount + '"></label>' +
+      '<label class="field"><span>分类</span><select id="ee-cat">' + CATS.map(function (c) { return '<option value="' + c.id + '"' + (e.cat === c.id ? ' selected' : '') + '>' + c.name + '</option>'; }).join('') + '</select></label>' +
+      '<label class="field"><span>备注</span><input id="ee-note" type="text" maxlength="200" value="' + esc(e.note) + '"></label>' +
+      '<label class="field"><span>分摊天数</span><select id="ee-spread">' + SPREADS.concat([e.spread]).filter(function (v, i, a) { return a.indexOf(v) === i; }).sort(function (a, b) { return a - b; }).map(function (n) { return '<option value="' + n + '"' + (e.spread === n ? ' selected' : '') + '>' + (n === 1 ? '不分摊' : n + ' 天') + '</option>'; }).join('') + '</select></label>' +
+      '<label class="field"><span>日期</span><input id="ee-date" type="date" max="' + todayKey() + '" value="' + k + '"></label>' +
+      '<div class="err" id="ee-err" hidden></div>' +
+      '<div class="btnrow"><button type="button" class="btn" data-act="sheet-close">取消</button><button type="button" class="btn primary" data-act="save-expense" data-date="' + k + '" data-id="' + esc(id) + '">保存</button></div>');
+  }
+  function saveExpense(k, id) {
+    var f = findExpense(k, id); if (!f) return closeSheet();
+    var amt = num(document.getElementById('ee-amt').value);
+    var nk = document.getElementById('ee-date').value;
+    var err = document.getElementById('ee-err');
+    if (amt == null || amt <= 0) { err.textContent = '请输入大于 0 的金额。'; err.hidden = false; return; }
+    if (amt > 1e10) { err.textContent = '金额太大了，请检查一下。'; err.hidden = false; return; }
+    if (!isKey(nk)) { err.textContent = '请选择日期。'; err.hidden = false; return; }
+    if (nk > todayKey()) { err.textContent = '不能记到未来的日期。'; err.hidden = false; return; }
+    var e = f.e;
+    e.amount = Math.round(amt); e.cat = isCat(document.getElementById('ee-cat').value) ? document.getElementById('ee-cat').value : 'other';
+    e.note = document.getElementById('ee-note').value.trim().slice(0, 200);
+    e.spread = Math.max(1, +document.getElementById('ee-spread').value || 1);
+    if (nk !== k) { f.d.expenses.splice(f.i, 1); pruneDay(k); ensureDay(nk).expenses.push(e); }
+    saveNow(); closeSheet(); render(); toast(nk !== k ? '已移到 ' + fmtDate(nk) : '已保存修改');
+  }
+  function delExpense(id) {
+    var k = recDateShown(), f = findExpense(k, id); if (!f) return;
+    var removed = f.d.expenses.splice(f.i, 1)[0], idx = f.i;
+    pruneDay(k);
+    saveNow(); render();
+    toast('已删除 ' + fmtW(removed.amount), function () { var dd = ensureDay(k); dd.expenses.splice(Math.min(idx, dd.expenses.length), 0, removed); saveNow(); render(); });
+  }
+
+  function confirmSheet(title, body, okLabel, okAct, danger) {
+    openSheet('<h3>' + title + '</h3><div class="small">' + body + '</div>' +
+      '<div class="btnrow"><button type="button" class="btn" data-act="sheet-close">取消</button><button type="button" class="btn ' + (danger ? 'danger' : 'primary') + '" data-act="' + okAct + '">' + okLabel + '</button></div>');
+  }
+
+  function backupJson() {
+    var copy = JSON.parse(JSON.stringify(state));
+    copy.meta.lastExport = new Date().toISOString();
+    return JSON.stringify(copy, null, 2);
+  }
+  function markExported() { if (!demoMode) { state.meta.lastExport = new Date().toISOString(); saveNow(); } }
+  function afterExport(msg) { markExported(); rerenderKeepScroll(); toast(msg); }
+
+  function exportData() {
+    if (demoMode) { toast('示例数据不需要备份'); return; }
+    var json = backupJson(), name = 'leso-life-backup-' + todayKey() + '.json';
+    // Outside claude.ai (own website / home-screen app): save with the browser itself.
+    if (!IN_CLAUDE) { nativeSave(json, name); return; }
+    getDownloads().then(function (dl) {
+      if (!dl) { showJsonSheet(json, '这个页面现在不能直接下载文件。请复制下面的文本，粘贴到备忘录或发给自己保存。'); return; }
+      return dl.save({ filename: name, data: json }).then(function () {
+        afterExport('备份已保存');
+      }, function (err) {
+        var code = err && err.code;
+        if (code === 'declined') toast('已取消保存');
+        else if (code === 'rate_limited') toast('请稍等片刻再试');
+        else showJsonSheet(json, '没能保存文件。请复制下面的文本，粘贴到备忘录或发给自己保存。');
+      });
+    });
+  }
+  // iPhone/iPad: share sheet ("存储到文件"); Android and computers: a normal download. Copyable text is the last resort.
+  var sharing = false;
+  function nativeSave(json, name) {
+    if (sharing) return;
+    var textSheet = function (why) { showJsonSheet(json, why + '请复制下面的文本，粘贴到备忘录或发给自己保存。'); };
+    if (IS_IOS && navigator.share && navigator.canShare) {
+      // Some browsers refuse .json files in the share sheet but accept plain text.
+      var file = null;
+      [ 'application/json', 'text/plain' ].some(function (type) {
+        try { var f = new File([json], name, { type: type }); if (navigator.canShare({ files: [f] })) { file = f; return true; } } catch (e) {}
+        return false;
+      });
+      if (file) {
+        sharing = true;
+        navigator.share({ files: [file] }).then(function () { sharing = false; afterExport('备份已导出'); }, function (err) {
+          sharing = false;
+          if (err && err.name === 'AbortError') toast('已取消保存');
+          else textSheet('没能打开分享。');
+        });
+        return;
+      }
+    }
+    // A download inside a Home Screen app on iPhone opens a preview that can be hard to leave.
+    if (IOS_APP) { textSheet('这里不能直接保存文件。'); return; }
+    try {
+      var url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+      var a = document.createElement('a'); a.href = url; a.download = name; a.rel = 'noopener';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+      afterExport('备份文件已开始下载');
+    } catch (e) {
+      textSheet('这个浏览器不能直接下载文件。');
+    }
+  }
+  function showJsonSheet(json, msg) {
+    openSheet('<h3>备份文本</h3><div class="small muted">' + esc(msg) + '</div><textarea id="jsonout" class="code" readonly style="min-height:200px">' + esc(json) + '</textarea>' +
+      '<div class="btnrow"><button type="button" class="btn primary" data-act="copy-json">复制全部</button><button type="button" class="btn" data-act="mark-saved">我已保存好</button></div>' +
+      '<button type="button" class="btn ghost" data-act="sheet-close">关闭</button>');
+  }
+  function copyJson() {
+    if (demoMode) { toast('示例数据不需要备份'); return; }
+    var json = backupJson();
+    var done = function () { afterExport('备份文本已复制，记得粘贴保存到别处'); };
+    var fallback = function () {
+      if (!document.getElementById('jsonout')) showJsonSheet(json, '自动复制没有成功。请长按下面的文本，全选后复制，保存好后点“我已保存好”。');
+      else toast('自动复制没有成功，请长按文本手动复制');
+      var ta = document.getElementById('jsonout');
+      if (ta) { ta.focus(); ta.select(); try { ta.setSelectionRange(0, ta.value.length); } catch (e) {} }
+    };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(json).then(done, fallback);
+      else fallback();
+    } catch (e) { fallback(); }
+  }
+
+  var pendingImport = null;
+  function tryImport(text) {
+    var err = document.getElementById('import-err');
+    var obj;
+    function fail(m) { if (err) { err.textContent = m; err.hidden = false; } else toast(m); }
+    try { obj = JSON.parse(text); } catch (e) { return fail('这不是有效的备份：无法读取 JSON 文本。'); }
+    if (!obj || typeof obj !== 'object' || Array.isArray(obj) || obj.app !== APP_ID || !obj.settings || typeof obj.settings !== 'object') return fail('这不是 LESO LIFE 的备份文件。');
+    pendingImport = normalize(obj);
+    if (err) err.hidden = true;
+    var n = Object.keys(pendingImport.days).length;
+    confirmSheet('用备份覆盖现在的数据？', '备份里有 ' + n + ' 天记录。导入后，现在浏览器里的数据会被替换。如果不确定，可以先导出一份当前数据。', '导入并覆盖', 'import-confirm', true);
+  }
+  function resetUiForNewData() {
+    ui.recDate = null; ui.setDate = null; ui.chartSel = null; balanceInputError = ''; dateInputNote = '';
+    ['f-amt', 'f-note'].forEach(function (id) { var el = document.getElementById(id); if (el) el.value = ''; });
+    var sp = document.getElementById('f-spread'); if (sp) sp.value = '1';
+    resetDraft();
+  }
+
+  // ---------- event wiring ----------
+  document.addEventListener('click', function (ev) {
+    var t = ev.target.closest('[data-act]');
+    if (!t) return;
+    var act = t.getAttribute('data-act');
+    if (act === 'sheet-scrim') { if (ev.target === t) closeSheet(); return; }
+    var k = t.getAttribute('data-date');
+    switch (act) {
+      case 'tab': go(t.getAttribute('data-tab')); break;
+      case 'go-record': {
+        var an = t.getAttribute('data-anchor');
+        go('record', { date: k, anchor: an, focus: an === 'sec-diary' ? 'f-diary' : (an === 'sec-expense' ? 'f-amt' : null) });
+        break;
+      }
+      case 'go-settle': go('settle', { date: k }); break;
+      case 'go-rules': go('settings', { anchor: 'sec-rules' }); break;
+      case 'go-rules-money': go('settings', { anchor: 'sec-money', focus: 's-start' }); break;
+      case 'day': {
+        var which = t.getAttribute('data-which'), delta = +t.getAttribute('data-delta');
+        var cur = which === 'rec' ? recDateShown() : (ui.setDate || todayKey());
+        var nk = addDays(cur, delta); if (nk > todayKey()) nk = todayKey();
+        if (which === 'rec') { syncDraftFromDom(); ui.recDate = nk; } else ui.setDate = nk;
+        render(); break;
+      }
+      case 'day-today': if (t.getAttribute('data-which') === 'rec') { syncDraftFromDom(); ui.recDate = todayKey(); } else ui.setDate = todayKey(); render(); break;
+      case 'draft-cat': {
+        syncDraftFromDom();
+        if (draft.date && draft.date !== recDateShown()) draft = blankDraft(recDateShown());
+        draft.cat = isCat(t.getAttribute('data-cat')) ? t.getAttribute('data-cat') : 'meal'; draft.date = recDateShown();
+        saveDraft(); rerenderKeepScroll(); break;
+      }
+      case 'add-expense': addExpense(); break;
+      case 'edit-expense': editExpense(t.getAttribute('data-id')); break;
+      case 'save-expense': saveExpense(k, t.getAttribute('data-id')); break;
+      case 'del-expense': delExpense(t.getAttribute('data-id')); break;
+      case 'body': {
+        var dk = recDateShown(), d = ensureDay(dk), v = +t.getAttribute('data-v');
+        d.body = d.body === v ? null : v; pruneDay(dk); saveNow(); syncDraftFromDom(); rerenderKeepScroll(); break;
+      }
+      case 'clear-day': confirmSheet('清空 ' + fmtDate(recDateShown()) + ' 的记录？', '这一天的日记、消费、饮食、睡眠、运动和身体记录都会被删除。', '清空这天', 'clear-day-confirm', true); break;
+      case 'clear-day-confirm': {
+        var ck = recDateShown(), old = state.days[ck];
+        delete state.days[ck]; saveNow(); closeSheet(); render();
+        toast('已清空这天的记录', function () { state.days[ck] = old; saveNow(); render(); });
+        break;
+      }
+      case 'undo': if (undoFn) { var f = undoFn; undoFn = null; $toast.innerHTML = ''; f(); } break;
+      case 'sheet-close': closeSheet(); break;
+      case 'hist-range': ui.histRange = +t.getAttribute('data-v'); ui.chartSel = null; rerenderKeepScroll(); break;
+      case 'chart-sel': ui.chartSel = ui.chartSel === k ? null : k; rerenderKeepScroll(); break;
+      case 'a2hs-ok': lsSet(STORE_KEY + ':a2hs-ok', '1'); renderBanners(); break;
+      case 'start-real':
+        demoMode = false; state = freshState(); resetUiForNewData(); askPersist();
+        saveNow(); go('settings', { focus: 's-balance' }); toast('已清空示例数据，先填写你的资金'); break;
+      case 'show-corrupt':
+        openSheet('<h3>无法读取的原始数据</h3><div class="small muted">这是之前保存但无法读取的内容。可以复制出来保存，再导入一份正确的备份。</div><textarea id="rawout" class="code" readonly style="min-height:200px">' + esc(corruptRaw || '') + '</textarea>' +
+          '<div class="btnrow"><button type="button" class="btn primary" data-act="copy-raw">复制全部</button><button type="button" class="btn" data-act="sheet-close">关闭</button></div>');
+        break;
+      case 'copy-raw': {
+        var rawTa = document.getElementById('rawout');
+        var selRaw = function () { if (rawTa) { rawTa.focus(); rawTa.select(); try { rawTa.setSelectionRange(0, rawTa.value.length); } catch (e) {} } toast('请长按文本，全选后复制'); };
+        try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(corruptRaw || '').then(function () { toast('原始文本已复制'); }, selRaw); else selRaw(); } catch (e) { selRaw(); }
+        break;
+      }
+      case 'add-fixed': {
+        var nm = document.getElementById('s-fx-name').value.trim().slice(0, 80), am = num(document.getElementById('s-fx-amt').value);
+        var fe = document.getElementById('fx-err');
+        if (am == null || am <= 0) { fe.textContent = '请输入大于 0 的金额。'; fe.hidden = false; return; }
+        state.settings.fixedCosts.push({ id: uid(), name: nm || '固定支出', amount: Math.round(am) });
+        saveNow(); rerenderKeepScroll(); toast('已添加固定支出'); break;
+      }
+      case 'del-fixed': {
+        var id = t.getAttribute('data-id'), list = state.settings.fixedCosts, ix = -1;
+        list.forEach(function (f, i) { if (f.id === id) ix = i; });
+        if (ix >= 0) { var rm = list.splice(ix, 1)[0]; saveNow(); rerenderKeepScroll(); toast('已删除 ' + rm.name, function () { state.settings.fixedCosts.splice(ix, 0, rm); saveNow(); rerenderKeepScroll(); }); }
+        break;
+      }
+      case 'rule-mode': state.settings.rules.budget.mode = t.getAttribute('data-v') === 'daily' ? 'daily' : 'pace'; saveNow(); rerenderKeepScroll(); break;
+      case 'reset-rules': state.settings.rules = defaultRules(); saveNow(); rerenderKeepScroll(); toast('规则已恢复默认'); break;
+      case 'export': exportData(); break;
+      case 'copy-json': copyJson(); break;
+      case 'mark-saved': if (!demoMode) { closeSheet(); afterExport('已记录这次备份'); } else closeSheet(); break;
+      case 'import-text': tryImport(document.getElementById('importtext').value); break;
+      case 'import-confirm':
+        if (pendingImport) { state = pendingImport; pendingImport = null; demoMode = false; corruptRaw = null; resetUiForNewData(); saveNow(); closeSheet(); go('home'); toast('备份已导入'); }
+        break;
+      case 'clear-all': confirmSheet('清空所有数据？', '所有设置和记录都会被删除，无法撤销。建议先导出备份。', '清空', 'clear-confirm', true); break;
+      case 'clear-confirm':
+        var keepHour = state.settings.dayStartHour;
+        state = freshState(todayKey()); state.settings.dayStartHour = keepHour; demoMode = false; resetUiForNewData(); saveNow(); closeSheet(); go('settings'); toast('已清空所有数据'); break;
+    }
+  });
+
+  // The expense form belongs to the date on screen. A pending draft typed on another date is kept
+  // until the user adds it, unless they start typing a new one here.
+  function syncDraftFromDom() {
+    var a = document.getElementById('f-amt'), n = document.getElementById('f-note'), sp = document.getElementById('f-spread');
+    if (!a || !n || !sp) return;
+    var k = recDateShown();
+    var typed = !!(a.value || n.value.trim());
+    if (draft.date && draft.date !== k && !typed) return;
+    draft.amount = a.value; draft.note = n.value; draft.spread = +sp.value || 1; draft.date = k;
+    if (!typed && SPREADS.indexOf(draft.spread) < 0) draft.spread = 1;
+  }
+
+  function onField(ev) {
+    var el = ev.target;
+    if (!el || !el.hasAttribute) return;
+    // A half-typed number ("1e", "-") reads as empty; don't let it wipe the saved value.
+    if (el.type === 'number' && el.validity && el.validity.badInput) return;
+    // expense draft
+    if (el.hasAttribute('data-draft')) { syncDraftFromDom(); saveDraft(); var er = document.getElementById('amt-err'); if (er) er.hidden = true; return; }
+    // record fields: always write to the day that is on screen
+    if (document.getElementById('rec-form') && (el.hasAttribute('data-field') || el.hasAttribute('data-meal') || el.hasAttribute('data-check'))) {
+      var k = recDateShown(), d = ensureDay(k);
+      if (el.hasAttribute('data-meal')) {
+        var mid = el.getAttribute('data-meal'), m = d.meals[mid];
+        var cb = document.getElementById('f-meal-' + mid);
+        if (el.getAttribute('data-mk') === 'ate') { m.ate = el.checked; m.auto = false; }
+        else {
+          var had = !!m.text.trim();
+          m.text = el.value.slice(0, 200);
+          var has = !!m.text.trim();
+          if (has && !had && !m.ate) { m.ate = true; m.auto = true; if (cb) cb.checked = true; }
+          else if (!has && had && m.auto) { m.ate = false; m.auto = false; if (cb) cb.checked = false; }
+        }
+      } else if (el.hasAttribute('data-check')) {
+        d.checks[el.getAttribute('data-check')] = el.checked;
+      } else {
+        var f = el.getAttribute('data-field');
+        if (f === 'diary') d.diary = el.value.slice(0, 20000);
+        else if (f === 'bodyNote') d.bodyNote = el.value.slice(0, 200);
+        else if (f === 'bodySkip') d.bodySkip = el.checked;
+        else {
+          var raw = num(el.value), v = raw;
+          if (v != null) {
+            v = Math.max(0, v);
+            if (f === 'sleep') v = Math.min(24, v);
+            else v = Math.round(v);
+          }
+          d[f] = v;
+          var note = document.getElementById('health-note');
+          if (raw != null && v !== raw) {
+            if (note) { note.textContent = (f === 'sleep' ? '睡眠' : f === 'steps' ? '步数' : '运动分钟') + '已按 ' + fmtN(v, 1) + ' 记录。'; note.hidden = false; }
+            if (ev.type === 'change') el.value = v;
+          } else if (note && ev.type === 'change') note.hidden = true;
+        }
+      }
+      pruneDay(k);
+      saveSoon();
+      return;
+    }
+    // settings
+    if (el.hasAttribute('data-set')) {
+      var key = el.getAttribute('data-set'), s = state.settings;
+      if (key === 'startDate' || key === 'endDate') {
+        // iOS fires both input and change for the same pick; only react to a real change.
+        if (isKey(el.value) && el.value !== s[key]) {
+          dateInputNote = '';
+          if (key === 'startDate') {
+            var len = Math.max(0, diffDays(s.endDate, s.startDate));
+            s.startDate = el.value;
+            if (s.endDate < s.startDate) { s.endDate = addDays(s.startDate, len); dateInputNote = '开始日期晚于原来的结束日期，结束日期已一起顺延到 ' + fmtDate(s.endDate) + '。'; }
+          } else if (el.value < s.startDate) {
+            dateInputNote = '“需要撑到哪一天”不能早于开始日期，这个日期没有保存。';
+            if (ev.type === 'change') el.value = s.endDate;
+          } else s.endDate = el.value;
+        }
+      }
+      else if (key === 'goalText') s.goalText = el.value.slice(0, 500);
+      else if (key === 'dayStartHour') s.dayStartHour = Math.min(6, Math.max(0, +el.value || 0));
+      else {
+        var nv = num(el.value);
+        if (key === 'balance') {
+          balanceInputError = '';
+          if (nv != null && nv < 0) balanceInputError = '资金不能是负数，这个数字没有保存。';
+          else s.balance = nv == null ? null : Math.round(nv);
+        } else if (key === 'reserve') {
+          s.reserve = Math.max(0, Math.round(nv || 0));
+          if (nv != null && nv < 0 && ev.type === 'change') el.value = 0;
+        } else if (key === 'foodDaily') {
+          var fe = document.getElementById('food-err');
+          if (nv != null && nv < 0) {
+            if (fe) { fe.textContent = '饮食预算不能是负数，这个数字没有保存。'; fe.hidden = false; }
+            if (ev.type === 'change') el.value = s.foodDaily == null ? '' : s.foodDaily;
+            return;
+          }
+          if (fe) fe.hidden = true;
+          s.foodDaily = nv != null && nv > 0 ? Math.round(nv) : null;
+          var fb = document.getElementById('r-foodbudget'), fw = document.getElementById('r-foodbudget-wrap'), fh = document.getElementById('r-foodbudget-hint');
+          if (fb) fb.disabled = s.foodDaily == null; if (fw) fw.classList.toggle('disabled', s.foodDaily == null); if (fh) fh.hidden = s.foodDaily != null;
+        }
+      }
+      saveSoon();
+      var errEl = document.getElementById('set-err'), msg = settingsErrors();
+      if (errEl) { errEl.textContent = msg; errEl.hidden = !msg; }
+      var cc = document.getElementById('calc-card'); if (cc) cc.innerHTML = calcCard();
+      if ((key === 'dayStartHour' || key === 'startDate' || key === 'endDate') && ev.type === 'change') rerenderKeepScroll();
+      return;
+    }
+    if (el.hasAttribute('data-rule')) {
+      var path = el.getAttribute('data-rule'), pp = path.split('.'), R = state.settings.rules[pp[0]];
+      var rn = document.getElementById('rule-note');
+      if (el.type === 'checkbox') R[pp[1]] = el.checked;
+      else {
+        var rv = clampRule(path, el.value);
+        if (rv == null) { if (ev.type === 'change') el.value = R[pp[1]]; return; }
+        R[pp[1]] = rv;
+        var typedN = num(el.value), spec = RULE_SPEC[path];
+        if (rv !== typedN) {
+          if (rn) { rn.textContent = (typedN < spec.min || typedN > spec.max ? '超出范围（' + spec.min + '–' + spec.max + '），' : spec.int ? '这一项只能填整数，' : '这一项按半小时计算，') + '已按 ' + rv + ' 保存。'; rn.hidden = false; }
+          if (ev.type === 'change') el.value = rv;
+        } else if (rn && ev.type === 'change') rn.hidden = true;
+      }
+      var se = document.getElementById('sleep-err');
+      if (se) se.hidden = !(state.settings.rules.sleep.minHours > state.settings.rules.sleep.maxHours);
+      saveSoon();
+    }
+  }
+  document.addEventListener('input', onField);
+  document.addEventListener('change', function (ev) {
+    if (ev.target.id === 'importfile') {
+      var file = ev.target.files && ev.target.files[0]; if (!file) return;
+      if (file.size > 20 * 1024 * 1024) { var e0 = document.getElementById('import-err'); e0.textContent = '文件太大，不像是 LESO LIFE 的备份。'; e0.hidden = false; ev.target.value = ''; return; }
+      var rd = new FileReader();
+      rd.onload = function () { tryImport(String(rd.result || '')); ev.target.value = ''; };
+      rd.onerror = function () { var e = document.getElementById('import-err'); e.textContent = '读取文件失败，请重试。'; e.hidden = false; };
+      rd.readAsText(file);
+      return;
+    }
+    onField(ev);
+  });
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape' && $sheet.innerHTML) { closeSheet(); return; }
+    if (ev.key === 'Enter' && (ev.target.id === 'f-amt' || ev.target.id === 'f-note')) { ev.preventDefault(); addExpense(); return; }
+    if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.getAttribute && ev.target.getAttribute('data-act') === 'chart-sel') { ev.preventDefault(); ev.target.dispatchEvent(new MouseEvent('click', { bubbles: true })); }
+  });
+
+  // ---------- boot ----------
+  storageOK = probeStore();
+  var raw = lsGet(STORE_KEY);
+  var parsed = null;
+  if (raw != null) {
+    try { parsed = JSON.parse(raw); } catch (e) { parsed = null; }
+    if (!parsed || typeof parsed !== 'object' || parsed.app !== APP_ID) {
+      corruptRaw = raw;
+      if (lsGet(STORE_KEY + ':unreadable') !== raw) lsSet(STORE_KEY + ':unreadable', raw);
+      parsed = null;
+    }
+  }
+  if (parsed) { state = normalize(parsed); demoMode = false; loadDraft(); askPersist(); }
+  else { state = makeDemo(); demoMode = true; }
+  setInterval(checkRollover, 60000);
+  render();
+})();
+</script>
+
+<script>
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+}
+</script>
+</body>
+</html>
